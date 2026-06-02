@@ -23,6 +23,7 @@
 
 ```
 index.html               主畫面
+styles.css               樣式表
 app.js                   應用程式進入點
 inventoryStore.js        資料狀態管理
 inventoryModels.js       資料模型
