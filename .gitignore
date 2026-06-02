@@ -1,0 +1,7 @@
+# 只追蹤程式碼檔案
+*
+!*/
+!.gitignore
+!*.js
+!*.html
+!README.md
