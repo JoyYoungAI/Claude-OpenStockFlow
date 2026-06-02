@@ -289,7 +289,8 @@
       confirmedAt: normalizeText(input && input.confirmedAt),
       voidRequestedBy: normalizeText(input && input.voidRequestedBy),
       voidRequestedAt: normalizeText(input && input.voidRequestedAt),
-      voidRequestReason: normalizeText(input && input.voidRequestReason)
+      voidRequestReason: normalizeText(input && input.voidRequestReason),
+      receivedQuantity: nonNegativeNumber(input && input.receivedQuantity) || 0
     };
   }
 
@@ -333,7 +334,9 @@
       confirmedAt: normalizeText(input && input.confirmedAt),
       voidRequestedBy: normalizeText(input && input.voidRequestedBy),
       voidRequestedAt: normalizeText(input && input.voidRequestedAt),
-      voidRequestReason: normalizeText(input && input.voidRequestReason)
+      voidRequestReason: normalizeText(input && input.voidRequestReason),
+      shippedQuantity: nonNegativeNumber(input && input.shippedQuantity) || 0,
+      commissionStatus: normalizeText(input && input.commissionStatus)
     };
   }
 

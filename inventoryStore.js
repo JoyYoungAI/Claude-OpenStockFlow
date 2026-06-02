@@ -670,7 +670,8 @@
       const voidInfo = createVoidInfo(options);
       sales = sales.map((item) => item.id === sale.id ? Object.assign({}, item, voidInfo, {
         sourceDocumentNo: item.sourceDocumentNo || item.documentNo,
-        relatedDocumentNos: mergeDocumentNos(item.relatedDocumentNos, [item.documentNo])
+        relatedDocumentNos: mergeDocumentNos(item.relatedDocumentNos, [item.documentNo]),
+        commissionStatus: item.commissionStatus ? "voided" : item.commissionStatus
       }) : item);
       receivables = receivables.map((receivable) => receivable.sourceDocumentNo === sale.documentNo
         ? Object.assign({}, receivable, {
