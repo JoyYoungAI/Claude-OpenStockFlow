@@ -1759,10 +1759,12 @@
           return receivable;
         }
 
-        const nextAmount = Math.max(receivable.paidAmount, receivable.amount - amount);
+        const nextAmount = Math.max(0, receivable.amount - amount);
+        const nextPaidAmount = Math.min(receivable.paidAmount, nextAmount);
         return Object.assign({}, receivable, {
           amount: nextAmount,
-          status: financeStatus(nextAmount, receivable.paidAmount),
+          paidAmount: nextPaidAmount,
+          status: financeStatus(nextAmount, nextPaidAmount),
           note: appendNote(receivable.note, `Return ${returnRow.documentNo}`),
           relatedDocumentNos: mergeDocumentNos(receivable.relatedDocumentNos, [returnRow.sourceDocumentNo, returnRow.documentNo])
         });
@@ -1776,10 +1778,12 @@
           return payable;
         }
 
-        const nextAmount = Math.max(payable.paidAmount, payable.amount - amount);
+        const nextAmount = Math.max(0, payable.amount - amount);
+        const nextPaidAmount = Math.min(payable.paidAmount, nextAmount);
         return Object.assign({}, payable, {
           amount: nextAmount,
-          status: financeStatus(nextAmount, payable.paidAmount),
+          paidAmount: nextPaidAmount,
+          status: financeStatus(nextAmount, nextPaidAmount),
           note: appendNote(payable.note, `Return ${returnRow.documentNo}`),
           relatedDocumentNos: mergeDocumentNos(payable.relatedDocumentNos, [returnRow.sourceDocumentNo, returnRow.documentNo])
         });

@@ -67,11 +67,11 @@
           ? rawState.productCategories
           : categoriesFromProducts(rawState.products),
         warehouses: migratedWarehouses,
-        purchases: withDefaultWarehouse(rawState.purchases, migratedWarehouseId),
-        sales: withDefaultWarehouse(rawState.sales, migratedWarehouseId),
+        purchases: withDefaultStatus(withDefaultWarehouse(rawState.purchases, migratedWarehouseId), "confirmed"),
+        sales: withDefaultStatus(withDefaultWarehouse(rawState.sales, migratedWarehouseId), "confirmed"),
         adjustments: withDefaultWarehouse(rawState.adjustments, migratedWarehouseId),
         transfers: withDefaultTransferWarehouses(rawState.transfers, migratedWarehouseId),
-        returns: withDefaultWarehouse(rawState.returns, migratedWarehouseId),
+        returns: withDefaultStatus(withDefaultWarehouse(rawState.returns, migratedWarehouseId), "confirmed"),
         costLayers: Array.isArray(rawState.costLayers) ? rawState.costLayers : [],
         receivables: Array.isArray(rawState.receivables) ? rawState.receivables : [],
         payables: Array.isArray(rawState.payables) ? rawState.payables : [],
@@ -214,6 +214,10 @@
     return (Array.isArray(rows) ? rows : []).map((row) => Object.assign({}, row, {
       warehouseId: Number(row && row.warehouseId) || warehouseId
     }));
+  }
+
+  function withDefaultStatus(rows, defaultStatus) {
+    return rows.map((row) => row.status ? row : Object.assign({}, row, { status: defaultStatus }));
   }
 
   function withDefaultTransferWarehouses(rows, warehouseId) {
