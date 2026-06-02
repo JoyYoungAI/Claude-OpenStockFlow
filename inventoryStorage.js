@@ -1,6 +1,6 @@
 (function (global) {
   const storageKey = "stockflow-inventory-state";
-  const SCHEMA_VERSION = 11;
+  const SCHEMA_VERSION = 12;
 
   function createInventoryStorage(config) {
     const seedState = config.seedState;
@@ -67,11 +67,11 @@
           ? rawState.productCategories
           : categoriesFromProducts(rawState.products),
         warehouses: migratedWarehouses,
-        purchases: withDefaultStatus(withDefaultWarehouse(rawState.purchases, migratedWarehouseId), "confirmed"),
-        sales: withDefaultStatus(withDefaultWarehouse(rawState.sales, migratedWarehouseId), "confirmed"),
+        purchases: withDefaultPurchaseFields(withDefaultStatus(withDefaultWarehouse(rawState.purchases, migratedWarehouseId), "confirmed")),
+        sales: withDefaultSaleFields(withDefaultStatus(withDefaultWarehouse(rawState.sales, migratedWarehouseId), "confirmed")),
         adjustments: withDefaultWarehouse(rawState.adjustments, migratedWarehouseId),
         transfers: withDefaultTransferWarehouses(rawState.transfers, migratedWarehouseId),
-        returns: withDefaultStatus(withDefaultWarehouse(rawState.returns, migratedWarehouseId), "confirmed"),
+        returns: withDefaultReturnUnitPrice(withDefaultStatus(withDefaultWarehouse(rawState.returns, migratedWarehouseId), "confirmed")),
         costLayers: Array.isArray(rawState.costLayers) ? rawState.costLayers : [],
         receivables: Array.isArray(rawState.receivables) ? rawState.receivables : [],
         payables: Array.isArray(rawState.payables) ? rawState.payables : [],
@@ -218,6 +218,18 @@
 
   function withDefaultStatus(rows, defaultStatus) {
     return rows.map((row) => row.status ? row : Object.assign({}, row, { status: defaultStatus }));
+  }
+
+  function withDefaultPurchaseFields(rows) {
+    return rows.map((row) => Object.assign({ supplierId: 0, receivedQuantity: 0 }, row));
+  }
+
+  function withDefaultSaleFields(rows) {
+    return rows.map((row) => Object.assign({ customerId: 0, shippedQuantity: 0, commissionStatus: "" }, row));
+  }
+
+  function withDefaultReturnUnitPrice(rows) {
+    return rows.map((row) => row.unitPrice !== undefined ? row : Object.assign({}, row, { unitPrice: row.unitAmount || 0 }));
   }
 
   function withDefaultTransferWarehouses(rows, warehouseId) {

@@ -528,4 +528,53 @@ assert.equal(adjustmentStore.stockMovements({ query: "ADJ-202605-001" })[0].type
 assert.equal(adjustmentStore.addStockCount({ productId: 1, countedQuantity: 8, reason: "Same", date: "2026-05-13" }).error, "NO_DIFFERENCE");
 assert.equal(adjustmentStore.exportInventoryRows()[0].adjusted, 2);
 
+// ── Bug fix: 進貨作廢後 product.cost 正確回補 ──────────────────────────────
+const costRevertStore = createInventoryStore({
+  products: [{ id: 1, sku: "X001", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+  purchases: [], sales: []
+});
+const cr1 = costRevertStore.addPurchase({ productId: 1, quantity: 5, unitCost: 200, supplier: "S", date: "2026-01-01" });
+assert.equal(costRevertStore.listProducts().find((p) => p.id === 1).cost, 200);
+const cr2 = costRevertStore.addPurchase({ productId: 1, quantity: 3, unitCost: 300, supplier: "S", date: "2026-01-02" });
+assert.equal(costRevertStore.listProducts().find((p) => p.id === 1).cost, 300);
+costRevertStore.removePurchase(cr2.id, { reason: "test", user: "test" });
+assert.equal(costRevertStore.listProducts().find((p) => p.id === 1).cost, 200, "cost should revert to previous effective purchase unitCost");
+costRevertStore.removePurchase(cr1.id, { reason: "test", user: "test" });
+assert.equal(costRevertStore.listProducts().find((p) => p.id === 1).cost, 200, "cost unchanged when no effective purchase remains");
+
+// ── Bug fix: 退貨金額邊界 paidAmount 不超過新 amount ─────────────────────────
+const returnBoundaryStore = createInventoryStore({
+  products: [{ id: 1, sku: "X001", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+  purchases: [], sales: []
+});
+returnBoundaryStore.addPurchaseOrder({
+  supplier: "Vendor",
+  date: "2026-02-01",
+  dueDate: "2026-02-28",
+  createPayable: true,
+  items: [{ productId: 1, quantity: 10, unitCost: 100 }]
+});
+returnBoundaryStore.addPayment({ direction: "out", targetType: "payable", targetId: 1, amount: 800, method: "Wire", date: "2026-02-10" });
+assert.equal(returnBoundaryStore.listPayables()[0].paidAmount, 800);
+returnBoundaryStore.addPurchaseReturn({ sourceLineId: 1, quantity: 5, reason: "Defect", date: "2026-02-15", user: "Buyer" });
+const afterReturn = returnBoundaryStore.listPayables()[0];
+assert.equal(afterReturn.amount, 500, "payable amount reduced by return");
+assert.ok(afterReturn.paidAmount <= afterReturn.amount, "paidAmount must not exceed new amount");
+assert.equal(afterReturn.paidAmount, 500, "paidAmount clamped to new amount");
+assert.equal(afterReturn.status, "paid", "status reflects fully settled");
+
+// ── Bug fix: costLayers.remainingQuantity 隨銷貨遞減 ──────────────────────────
+const layerStore = createInventoryStore({
+  products: [{ id: 1, sku: "X001", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+  purchases: [], sales: []
+});
+layerStore.addPurchaseOrder({ supplier: "S", date: "2026-03-01", items: [{ productId: 1, quantity: 10, unitCost: 100 }] });
+assert.equal(layerStore.listCostLayers()[0].remainingQuantity, 10, "full quantity before any sale");
+layerStore.addSaleOrder({ customer: "C", date: "2026-03-02", items: [{ productId: 1, quantity: 3, unitPrice: 200 }] });
+assert.equal(layerStore.listCostLayers()[0].remainingQuantity, 7, "remainingQuantity decremented by sale qty");
+layerStore.addSaleOrder({ customer: "C", date: "2026-03-03", items: [{ productId: 1, quantity: 7, unitPrice: 200 }] });
+assert.equal(layerStore.listCostLayers()[0].remainingQuantity, 0, "layer fully consumed");
+
+console.log("All tests passed.");
+
 console.log("inventoryStore tests passed");
