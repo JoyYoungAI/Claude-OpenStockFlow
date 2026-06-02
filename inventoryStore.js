@@ -1,6 +1,6 @@
 (function (global) {
-  const models = global.StockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
-  const reports = global.StockFlowReports || (typeof require !== "undefined" ? require("./inventoryReports") : {});
+  const models = global.OpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
+  const reports = global.OpenStockFlowReports || (typeof require !== "undefined" ? require("./inventoryReports") : {});
   const {
     normalizeProductCategory,
     copyProductCategory,

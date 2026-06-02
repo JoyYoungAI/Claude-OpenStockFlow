@@ -1,5 +1,5 @@
 (function (global) {
-  const utils = global.StockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
+  const utils = global.OpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
   const {
     normalizeText,
     positiveNumber,
@@ -706,8 +706,8 @@
       currencyCode: "TWD",
       currencySymbol: "$",
       currencyPosition: "prefix",
-      reportTitle: "StockFlow 營運報表",
-      reportHeaderText: "StockFlow",
+      reportTitle: "OpenStockFlow 營運報表",
+      reportHeaderText: "OpenStockFlow",
       reportFooterText: "",
       showPrintDate: true,
       dateFormat: "YYYY-MM-DD"
@@ -888,7 +888,7 @@
     sameSku
   };
 
-  global.StockFlowModels = api;
+  global.OpenStockFlowModels = api;
 
   if (typeof module !== "undefined") {
     module.exports = api;

@@ -226,7 +226,7 @@
     normalizeRole
   };
 
-  global.StockFlowAccess = api;
+  global.OpenStockFlowAccess = api;
 
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;

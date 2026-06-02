@@ -35,12 +35,12 @@
     const language = preferences.interfaceLanguage || "zh-Hant";
     const text = typeof t === "function"
       ? t
-      : (path, fallback) => global.StockFlowI18n ? global.StockFlowI18n.text(language, path, fallback) : fallback;
-    const reportTitle = global.StockFlowI18n
-      ? global.StockFlowI18n.text(language, "defaults.reportTitle", "StockFlow 營運報表")
-      : "StockFlow 營運報表";
-    const printDatePrefix = global.StockFlowI18n
-      ? global.StockFlowI18n.text(language, "defaults.printDatePrefix", "列印日期")
+      : (path, fallback) => global.OpenStockFlowI18n ? global.OpenStockFlowI18n.text(language, path, fallback) : fallback;
+    const reportTitle = global.OpenStockFlowI18n
+      ? global.OpenStockFlowI18n.text(language, "defaults.reportTitle", "OpenStockFlow 營運報表")
+      : "OpenStockFlow 營運報表";
+    const printDatePrefix = global.OpenStockFlowI18n
+      ? global.OpenStockFlowI18n.text(language, "defaults.printDatePrefix", "列印日期")
       : "列印日期";
     const lowStock = store.inventoryReport({ lowStockOnly: true });
     const warehouseSummary = store.warehouseStockSummary();
@@ -162,11 +162,11 @@
       : `<tr><td colspan="7" class="empty">${text("emptyStates.noMovements", "這個期間沒有符合條件的庫存異動。")}</td></tr>`;
   }
 
-  global.StockFlowRenderers = {
+  global.OpenStockFlowRenderers = {
     renderReports
   };
 
   if (typeof module !== "undefined") {
-    module.exports = global.StockFlowRenderers;
+    module.exports = global.OpenStockFlowRenderers;
   }
 })(typeof window !== "undefined" ? window : globalThis);

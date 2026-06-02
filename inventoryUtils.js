@@ -70,7 +70,7 @@
     nextDocumentNo
   };
 
-  global.StockFlowUtils = api;
+  global.OpenStockFlowUtils = api;
 
   if (typeof module !== "undefined") {
     module.exports = api;

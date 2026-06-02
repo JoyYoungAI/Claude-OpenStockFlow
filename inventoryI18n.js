@@ -2,7 +2,7 @@
   const dictionaries = {
     "zh-Hant": {
       app: {
-        title: "StockFlow 進銷存系統",
+        title: "OpenStockFlow 進銷存系統",
         heading: "進銷存系統"
       },
       navigation: {
@@ -411,8 +411,8 @@
         suffix: "金額後方"
       },
       defaults: {
-        reportTitle: "StockFlow 營運報表",
-        reportHeaderText: "StockFlow",
+        reportTitle: "OpenStockFlow 營運報表",
+        reportHeaderText: "OpenStockFlow",
         printDatePrefix: "列印日期"
       }
     }
@@ -434,7 +434,7 @@
     return current;
   }
 
-  global.StockFlowI18n = {
+  global.OpenStockFlowI18n = {
     dictionary,
     text
   };

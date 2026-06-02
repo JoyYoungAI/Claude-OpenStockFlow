@@ -89,8 +89,8 @@ const seedState = {
     currencyCode: "TWD",
     currencySymbol: "$",
     currencyPosition: "prefix",
-    reportTitle: "StockFlow 營運報表",
-    reportHeaderText: "StockFlow",
+    reportTitle: "OpenStockFlow 營運報表",
+    reportHeaderText: "OpenStockFlow",
     reportFooterText: "",
     showPrintDate: true,
     dateFormat: "YYYY-MM-DD"
@@ -183,10 +183,10 @@ const learningChecklist = [
   "看到舊資料警示時，寫入操作應暫停並先重新整理。"
 ];
 
-const storage = StockFlowStorage.createInventoryStorage({ seedState, appVersion, assetVersion });
+const storage = OpenStockFlowStorage.createInventoryStorage({ seedState, appVersion, assetVersion });
 const initialLoad = storage.loadState();
 let store = createInventoryStore(initialLoad.state);
-const accessControl = StockFlowAccess.createInventoryAccess({
+const accessControl = OpenStockFlowAccess.createInventoryAccess({
   getCurrentUser: () => currentUser,
   listPermissionScopes: (employeeId) => store && store.listPermissionScopes
     ? store.listPermissionScopes({ employeeId, activeOnly: true })
@@ -275,7 +275,7 @@ const backupExportButton = document.querySelector("#backup-export-button");
 const backupFileInput = document.querySelector("#backup-file-input");
 const restoreButton = document.querySelector("#restore-button");
 const backupPreview = document.querySelector("#backup-preview");
-const auditControl = StockFlowAudit.createInventoryAudit({
+const auditControl = OpenStockFlowAudit.createInventoryAudit({
   getFilterValues: () => ({
     query: auditQuery.value,
     month: auditMonth.value,
@@ -286,7 +286,7 @@ const auditControl = StockFlowAudit.createInventoryAudit({
   escapeHtml,
   recordAudit
 });
-const backupControl = StockFlowBackup.createInventoryBackup({
+const backupControl = OpenStockFlowBackup.createInventoryBackup({
   escapeHtml,
   validateBackupEnvelope: (backup) => storage.validateBackupEnvelope(backup),
   onValidBackup: (result) => {
@@ -310,7 +310,7 @@ const backupControl = StockFlowBackup.createInventoryBackup({
     renderActionAvailability();
   }
 });
-const masterDataUi = StockFlowMasterDataUi.createInventoryMasterDataUi({
+const masterDataUi = OpenStockFlowMasterDataUi.createInventoryMasterDataUi({
   document,
   getStore: () => store,
   fields: {
@@ -403,12 +403,12 @@ function bindEvents() {
       : store.addProduct(data);
 
     if (!product) {
-      setStatus(StockFlowMessages.message("productSaveFailed"), true);
+      setStatus(OpenStockFlowMessages.message("productSaveFailed"), true);
       return;
     }
 
     if (product.error === "DUPLICATE_SKU") {
-      setStatus(StockFlowMessages.message("duplicateSku"), true);
+      setStatus(OpenStockFlowMessages.message("duplicateSku"), true);
       return;
     }
 
@@ -444,12 +444,12 @@ function bindEvents() {
       : store.addPartner(data);
 
     if (!partner) {
-      setStatus(StockFlowMessages.message("partnerSaveFailed"), true);
+      setStatus(OpenStockFlowMessages.message("partnerSaveFailed"), true);
       return;
     }
 
     if (partner.error === "DUPLICATE_PARTNER") {
-      setStatus(StockFlowMessages.message("duplicatePartner"), true);
+      setStatus(OpenStockFlowMessages.message("duplicatePartner"), true);
       return;
     }
 
@@ -480,7 +480,7 @@ function bindEvents() {
     const category = store.addProductCategory(Object.fromEntries(new FormData(categoryForm)));
 
     if (!category) {
-      setStatus(StockFlowMessages.message("categorySaveFailed"), true);
+      setStatus(OpenStockFlowMessages.message("categorySaveFailed"), true);
       return;
     }
 
@@ -506,7 +506,7 @@ function bindEvents() {
     const warehouse = store.addWarehouse(Object.fromEntries(new FormData(warehouseForm)));
 
     if (!warehouse) {
-      setStatus(StockFlowMessages.message("warehouseSaveFailed"), true);
+      setStatus(OpenStockFlowMessages.message("warehouseSaveFailed"), true);
       return;
     }
 
@@ -595,7 +595,7 @@ function bindEvents() {
     });
 
     if (!purchase) {
-      setStatus(StockFlowMessages.transactionError(purchase, "purchaseOrderFailed"), true);
+      setStatus(OpenStockFlowMessages.transactionError(purchase, "purchaseOrderFailed"), true);
       return;
     }
 
@@ -636,12 +636,12 @@ function bindEvents() {
     });
 
     if (!sale) {
-      setStatus(StockFlowMessages.message("saleOrderFailed"), true);
+      setStatus(OpenStockFlowMessages.message("saleOrderFailed"), true);
       return;
     }
 
     if (sale.error === "INSUFFICIENT_STOCK") {
-      setStatus(StockFlowMessages.transactionError(sale, "saleOrderFailed"), true);
+      setStatus(OpenStockFlowMessages.transactionError(sale, "saleOrderFailed"), true);
       return;
     }
 
@@ -669,12 +669,12 @@ function bindEvents() {
     const adjustment = store.addStockCount(data);
 
     if (!adjustment) {
-      setStatus(StockFlowMessages.message("adjustmentFailed"), true);
+      setStatus(OpenStockFlowMessages.message("adjustmentFailed"), true);
       return;
     }
 
     if (adjustment.error === "NO_DIFFERENCE") {
-      setStatus(StockFlowMessages.transactionError(adjustment, "adjustmentFailed"));
+      setStatus(OpenStockFlowMessages.transactionError(adjustment, "adjustmentFailed"));
       return;
     }
 
@@ -708,12 +708,12 @@ function bindEvents() {
     });
 
     if (!transfer) {
-      setStatus(StockFlowMessages.message("transferOrderFailed"), true);
+      setStatus(OpenStockFlowMessages.message("transferOrderFailed"), true);
       return;
     }
 
     if (transfer.error === "INSUFFICIENT_STOCK") {
-      setStatus(StockFlowMessages.transactionError(transfer, "transferOrderFailed"), true);
+      setStatus(OpenStockFlowMessages.transactionError(transfer, "transferOrderFailed"), true);
       return;
     }
 
@@ -749,17 +749,17 @@ function bindEvents() {
     });
 
     if (!payment) {
-      setStatus(StockFlowMessages.message("paymentSaveFailed"), true);
+      setStatus(OpenStockFlowMessages.message("paymentSaveFailed"), true);
       return;
     }
 
     if (payment.error === "PAYMENT_EXCEEDS_BALANCE") {
-      setStatus(StockFlowMessages.message("paymentExceedsBalance"), true);
+      setStatus(OpenStockFlowMessages.message("paymentExceedsBalance"), true);
       return;
     }
 
     if (payment.error === "INVALID_PAYMENT_DIRECTION") {
-      setStatus(StockFlowMessages.message("invalidPaymentDirection"), true);
+      setStatus(OpenStockFlowMessages.message("invalidPaymentDirection"), true);
       return;
     }
 
@@ -1073,7 +1073,7 @@ function bindEvents() {
     });
 
     if (result && result.error === "NEGATIVE_STOCK") {
-      setStatus(StockFlowMessages.transactionError(result, "negativeStockOnRemove"), true);
+      setStatus(OpenStockFlowMessages.transactionError(result, "negativeStockOnRemove"), true);
       return;
     }
 
@@ -1437,7 +1437,7 @@ function handleDocumentWorkflow(type, id, workflowAction) {
   }
 
   if (result.error === "INSUFFICIENT_STOCK") {
-    setStatus(StockFlowMessages.message("insufficientStock"), true);
+    setStatus(OpenStockFlowMessages.message("insufficientStock"), true);
     return;
   }
 
@@ -1532,7 +1532,7 @@ function handleReturn(type, id) {
   }
 
   if (result.error === "INSUFFICIENT_STOCK") {
-    setStatus(StockFlowMessages.message("insufficientStock"), true);
+    setStatus(OpenStockFlowMessages.message("insufficientStock"), true);
     return;
   }
 
@@ -1680,7 +1680,7 @@ function moduleLabel(moduleName) {
 }
 
 function normalizeRole(role) {
-  return StockFlowAccess.normalizeRole(role);
+  return OpenStockFlowAccess.normalizeRole(role);
 }
 
 function currentRoleLabel() {
@@ -1854,14 +1854,14 @@ function currentLanguage() {
 }
 
 function t(path, fallback) {
-  return window.StockFlowI18n
-    ? window.StockFlowI18n.text(currentLanguage(), path, fallback)
+  return window.OpenStockFlowI18n
+    ? window.OpenStockFlowI18n.text(currentLanguage(), path, fallback)
     : fallback || "";
 }
 
 function applyTextBaseline() {
   document.documentElement.lang = currentLanguage();
-  document.title = t("app.title", "StockFlow 進銷存系統");
+  document.title = t("app.title", "OpenStockFlow 進銷存系統");
 
   const headingText = t("app.heading", "進銷存系統");
   const heading = document.querySelector(".app-header h1");
@@ -2730,7 +2730,7 @@ function renderPreferences() {
 }
 
 function renderReports() {
-  StockFlowRenderers.renderReports({
+  OpenStockFlowRenderers.renderReports({
     document,
     store,
     month: reportMonth.value,

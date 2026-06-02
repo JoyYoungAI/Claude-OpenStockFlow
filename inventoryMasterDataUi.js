@@ -187,7 +187,7 @@
   }
 
   const api = { createInventoryMasterDataUi };
-  global.StockFlowMasterDataUi = api;
+  global.OpenStockFlowMasterDataUi = api;
 
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;

@@ -1,6 +1,6 @@
 (function (global) {
-  const utils = global.StockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
-  const models = global.StockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
+  const utils = global.OpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
+  const models = global.OpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
   const { normalizeText } = utils;
   const { copyProduct, copyWarehouse } = models;
 
@@ -495,7 +495,7 @@
     stockForProduct
   };
 
-  global.StockFlowReports = api;
+  global.OpenStockFlowReports = api;
 
   if (typeof module !== "undefined") {
     module.exports = api;

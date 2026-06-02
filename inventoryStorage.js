@@ -105,7 +105,7 @@
 
     function validateBackupEnvelope(backup) {
       if (!backup || (!backup.state && !Array.isArray(backup.products))) {
-        return { valid: false, message: "這不是 StockFlow 備份檔。" };
+        return { valid: false, message: "這不是 OpenStockFlow 備份檔。" };
       }
 
       const migrated = migrateState(backup);
@@ -264,11 +264,11 @@
     };
   }
 
-  global.StockFlowStorage = {
+  global.OpenStockFlowStorage = {
     createInventoryStorage
   };
 
   if (typeof module !== "undefined") {
-    module.exports = global.StockFlowStorage;
+    module.exports = global.OpenStockFlowStorage;
   }
 })(typeof window !== "undefined" ? window : globalThis);
