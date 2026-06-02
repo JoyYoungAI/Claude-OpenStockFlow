@@ -705,27 +705,28 @@
       <datalist id="customer-options"></datalist>
     </main>
 
-    <script src="./inventoryUtils.js?v=1.17.2"></script>
-    <script src="./inventoryModels.js?v=1.17.2"></script>
-    <script src="./inventoryI18n.js?v=1.17.2"></script>
-    <script src="./inventoryAccess.js?v=1.17.2"></script>
-    <script src="./inventoryAudit.js?v=1.17.2"></script>
-    <script src="./inventoryBackup.js?v=1.17.2"></script>
-    <script src="./inventoryReports.js?v=1.17.2"></script>
-    <script src="./inventoryMasterDataUi.js?v=1.17.2"></script>
-    <script src="./inventoryStoreMaster.js?v=1.17.2"></script>
-    <script src="./inventoryStoreFinance.js?v=1.17.2"></script>
-    <script src="./inventoryStoreTransactions.js?v=1.17.2"></script>
-    <script src="./inventoryStore.js?v=1.17.2"></script>
-    <script src="./inventoryStorage.js?v=1.17.2"></script>
-    <script src="./inventoryRenderers.js?v=1.17.2"></script>
-    <script src="./inventoryMessages.js?v=1.17.2"></script>
-    <script src="./appMaster.js?v=1.17.2"></script>
-    <script src="./appPurchases.js?v=1.17.2"></script>
-    <script src="./appSales.js?v=1.17.2"></script>
-    <script src="./appAdjustments.js?v=1.17.2"></script>
-    <script src="./appFinance.js?v=1.17.2"></script>
-    <script src="./appReports.js?v=1.17.2"></script>
-    <script src="./app.js?v=1.17.2"></script>
+    <script>
+    /* ── Script loader ── 升版只需改這一處 ── */
+    (function () {
+      var V = "1.17.2";
+      var files = [
+        "inventoryUtils", "inventoryModels", "inventoryI18n", "inventoryAccess",
+        "inventoryAudit", "inventoryBackup", "inventoryReports", "inventoryMasterDataUi",
+        "inventoryStoreMaster", "inventoryStoreFinance", "inventoryStoreTransactions",
+        "inventoryStore", "inventoryStorage", "inventoryRenderers", "inventoryMessages",
+        "appSeedData",
+        "appMaster", "appPurchases", "appSales", "appAdjustments", "appFinance", "appReports",
+        "app"
+      ];
+      function load(i) {
+        if (i >= files.length) return;
+        var s = document.createElement("script");
+        s.src = "./" + files[i] + ".js?v=" + V;
+        s.onload = function () { load(i + 1); };
+        document.body.appendChild(s);
+      }
+      load(0);
+    })();
+    </script>
   </body>
 </html>
