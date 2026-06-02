@@ -1,14 +1,12 @@
 # OpenStockFlow 進銷存系統
 
-純前端、零依賴的進銷存系統，直接用瀏覽器開啟 `index.html` 即可使用，無需安裝任何套件或伺服器，所有資料存在 localStorage。
+純前端、零依賴的進銷存系統，直接用瀏覽器開啟即可使用，無需安裝任何套件或伺服器，所有資料存在 localStorage。
+
+**[線上 Demo](https://joyyoungai.github.io/OpenStockFlow/)**
 
 ## 快速使用
 
-下載後直接用瀏覽器開啟：
-
-```
-index.html
-```
+直接開啟線上 Demo，或下載後用瀏覽器開啟 `index.html`。
 
 ## 功能
 
