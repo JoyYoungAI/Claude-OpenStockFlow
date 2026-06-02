@@ -30,13 +30,16 @@ styles.css          全域樣式
 
 ── 資料層 ──────────────────────────────
 inventoryUtils.js           工具函式（純函式，無副作用）
-inventoryModels.js          資料模型（normalize / copy 函式）
+inventoryModelsMaster.js    主檔模型（商品/倉庫/往來對象/部門/員工/權限）
+inventoryModelsFinance.js   財務模型（應收/應付/收付款）
+inventoryModels.js          交易模型 + 共用工具 + 彙整 master/finance export
 inventoryStoreMaster.js     主檔 CRUD 子模組（state accessor 模式）
 inventoryStoreFinance.js    財務子模組
 inventoryStoreTransactions.js  交易子模組（進銷存核心）
 inventoryStore.js           狀態殼層 + 公開 API 組裝
 inventoryStorage.js         localStorage 讀寫 + schema migration
 inventoryReports.js         報表計算（純函式）
+appSeedData.js              範例資料 + 同步教學內容（重設用）
 
 ── 存取與稽核 ───────────────────────────
 inventoryAccess.js          角色權限控制
@@ -92,15 +95,19 @@ const ctx = {
 ## Script 載入順序（index.html 底部）
 
 ```
-inventoryUtils → inventoryModels → inventoryI18n → inventoryAccess
-→ inventoryAudit → inventoryBackup → inventoryReports → inventoryMasterDataUi
+inventoryUtils → inventoryModelsMaster → inventoryModelsFinance → inventoryModels
+→ inventoryI18n → inventoryAccess → inventoryAudit → inventoryBackup
+→ inventoryReports → inventoryMasterDataUi
 → inventoryStoreMaster → inventoryStoreFinance → inventoryStoreTransactions
 → inventoryStore → inventoryStorage → inventoryRenderers → inventoryMessages
+→ appSeedData
 → appMaster → appPurchases → appSales → appAdjustments → appFinance → appReports
 → app.js（最後）
 ```
 
-新增 JS 檔案必須在 `index.html` 對應位置加上 `<script src="./xxx.js?v=1.17.2"></script>`。
+**載入由 index.html 底部的 script loader 控制**（sequential，照 `files` 陣列順序）。
+新增 JS 檔案：把檔名（不含 .js）加入 loader 的 `files` 陣列即可，版本字串只需改 loader 裡的 `var V`。
+注意 `inventoryModelsMaster`、`inventoryModelsFinance` 必須排在 `inventoryModels` 之前。
 
 ---
 
@@ -121,7 +128,7 @@ node inventoryStore.test.js
 
 | 常數 | 位置 | 說明 |
 |------|------|------|
-| `SCHEMA_VERSION` | `inventoryStorage.js` 第 3 行 | localStorage schema 版本號，目前 `11` |
+| `SCHEMA_VERSION` | `inventoryStorage.js` 第 3 行 | localStorage schema 版本號，目前 `12` |
 | `appVersion` | `app.js` 第 1 行 | 顯示版本號，目前 `1.17.2` |
 
 新增欄位時，`SCHEMA_VERSION` 加 1，並在 `migrateState()` 裡補 `withDefaultStatus` 或類似的欄位遷移邏輯。

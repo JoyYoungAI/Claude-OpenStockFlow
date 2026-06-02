@@ -6,7 +6,7 @@ function bindPurchaseHandlers() {
     if (!requireAction("createPurchase")) { return; }
     const data = Object.fromEntries(new FormData(purchaseForm));
     const purchase = store.addPurchaseOrder({
-      supplier: data.supplier,
+      supplierId: data.supplierId,
       warehouseId: data.warehouseId,
       date: data.date,
       dueDate: data.dueDate,

@@ -6,7 +6,7 @@ function bindSaleHandlers() {
     if (!requireAction("createSale")) { return; }
     const data = Object.fromEntries(new FormData(saleForm));
     const sale = store.addSaleOrder({
-      customer: data.customer,
+      customerId: data.customerId,
       warehouseId: data.warehouseId,
       date: data.date,
       dueDate: data.dueDate,

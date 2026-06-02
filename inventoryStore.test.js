@@ -594,6 +594,18 @@ const fkPurchaseTextOnly = fkStore.addPurchase({ productId: 1, quantity: 1, unit
 assert.equal(fkPurchaseTextOnly.supplier, "手動輸入商", "fallback to text when no supplierId");
 assert.equal(fkPurchaseTextOnly.supplierId, 0, "supplierId defaults to 0");
 
+// ── Models split (master/finance/transaction) 合併 export 完整性 ────────────────
+const models = require("./inventoryModels");
+["normalizeProduct", "copyProduct", "normalizeWarehouse", "normalizePartner", "normalizeEmployee"].forEach((fn) => {
+  assert.equal(typeof models[fn], "function", `master model export missing: ${fn}`);
+});
+["normalizeReceivable", "copyReceivable", "normalizePayable", "normalizePayment", "financeStatus"].forEach((fn) => {
+  assert.equal(typeof models[fn], "function", `finance model export missing: ${fn}`);
+});
+["normalizePurchase", "copyPurchase", "normalizeSale", "normalizeReturn", "normalizeDocumentStatus", "defaultPreferences"].forEach((fn) => {
+  assert.equal(typeof models[fn], "function", `transaction/shared model export missing: ${fn}`);
+});
+
 console.log("All tests passed.");
 
 console.log("inventoryStore tests passed");

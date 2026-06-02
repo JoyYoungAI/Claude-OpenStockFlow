@@ -47,15 +47,24 @@
     }
 
     function renderPartnerOptions() {
-      const supplierOptions = store().listPartners({ role: "supplier", activeOnly: true })
-        .map((partner) => `<option value="${options.escapeAttr(partner.name)}"></option>`)
+      const blank = `<option value="0">${options.t ? options.t("fields.unlinkedPartner", "— 未連結 —") : "— 未連結 —"}</option>`;
+      const supplierOptions = blank + store().listPartners({ role: "supplier", activeOnly: true })
+        .map((partner) => `<option value="${partner.id}">${options.escapeHtml(partner.name)}</option>`)
         .join("");
-      const customerOptions = store().listPartners({ role: "customer", activeOnly: true })
-        .map((partner) => `<option value="${options.escapeAttr(partner.name)}"></option>`)
+      const customerOptions = blank + store().listPartners({ role: "customer", activeOnly: true })
+        .map((partner) => `<option value="${partner.id}">${options.escapeHtml(partner.name)}</option>`)
         .join("");
 
-      options.document.querySelector("#supplier-options").innerHTML = supplierOptions;
-      options.document.querySelector("#customer-options").innerHTML = customerOptions;
+      options.document.querySelectorAll("[data-supplier-select]").forEach((select) => {
+        const selected = select.value;
+        select.innerHTML = supplierOptions;
+        if (selected && Array.from(select.options).some((o) => o.value === selected)) { select.value = selected; }
+      });
+      options.document.querySelectorAll("[data-customer-select]").forEach((select) => {
+        const selected = select.value;
+        select.innerHTML = customerOptions;
+        if (selected && Array.from(select.options).some((o) => o.value === selected)) { select.value = selected; }
+      });
     }
 
     function renderProductCategories() {

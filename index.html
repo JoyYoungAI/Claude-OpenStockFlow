@@ -356,7 +356,7 @@
               <label><span>第 2 筆數量</span><input name="quantity2" type="number" min="1" step="1"></label>
               <label><span>第 2 筆單價</span><input name="unitCost2" type="number" min="0" step="1"></label>
             </div>
-            <label><span>供應商</span><input name="supplier" type="text" maxlength="50" list="supplier-options"></label>
+            <label><span>供應商</span><select name="supplierId" data-supplier-select></select></label>
             <label><span>日期</span><input name="date" type="date" required></label>
             <label><span>備註</span><input name="note" type="text" maxlength="80"></label>
             <label class="checkbox-filter"><input name="saveAsDraft" type="checkbox"><span>先存草稿</span></label>
@@ -401,7 +401,7 @@
               <label><span>第 2 筆數量</span><input name="quantity2" type="number" min="1" step="1"></label>
               <label><span>第 2 筆單價</span><input name="unitPrice2" type="number" min="0" step="1"></label>
             </div>
-            <label><span>客戶</span><input name="customer" type="text" maxlength="50" list="customer-options"></label>
+            <label><span>客戶</span><select name="customerId" data-customer-select></select></label>
             <label><span>日期</span><input name="date" type="date" required></label>
             <label><span>備註</span><input name="note" type="text" maxlength="80"></label>
             <label class="checkbox-filter"><input name="saveAsDraft" type="checkbox"><span>先存草稿</span></label>
@@ -701,8 +701,6 @@
         </section>
       </section>
 
-      <datalist id="supplier-options"></datalist>
-      <datalist id="customer-options"></datalist>
     </main>
 
     <script>
@@ -710,7 +708,7 @@
     (function () {
       var V = "1.17.2";
       var files = [
-        "inventoryUtils", "inventoryModels", "inventoryI18n", "inventoryAccess",
+        "inventoryUtils", "inventoryModelsMaster", "inventoryModelsFinance", "inventoryModels", "inventoryI18n", "inventoryAccess",
         "inventoryAudit", "inventoryBackup", "inventoryReports", "inventoryMasterDataUi",
         "inventoryStoreMaster", "inventoryStoreFinance", "inventoryStoreTransactions",
         "inventoryStore", "inventoryStorage", "inventoryRenderers", "inventoryMessages",
