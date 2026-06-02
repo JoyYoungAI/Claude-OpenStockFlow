@@ -636,6 +636,16 @@
           relatedDocumentNos: mergeDocumentNos(payable.relatedDocumentNos, [purchase.documentNo])
         })
         : payable);
+      const latestEffectivePurchase = purchases.find(
+        (p) => p.productId === purchase.productId && isDocumentEffective(p)
+      );
+      if (latestEffectivePurchase) {
+        products = products.map((item) =>
+          item.id === purchase.productId
+            ? Object.assign({}, item, { cost: latestEffectivePurchase.unitCost })
+            : item
+        );
+      }
       return true;
     }
 
