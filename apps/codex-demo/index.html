@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Codex Demo Idea Board</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace" aria-label="Idea board">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Codex Demo</p>
+            <h1>點子板</h1>
+          </div>
+          <div class="stats" aria-label="Idea stats">
+            <span><strong id="total-count">0</strong> 全部</span>
+            <span><strong id="active-count">0</strong> 進行中</span>
+            <span><strong id="done-count">0</strong> 完成</span>
+          </div>
+        </header>
+
+        <form class="composer" id="idea-form">
+          <label for="idea-input">新增點子</label>
+          <div class="composer-row">
+            <input id="idea-input" name="idea" type="text" maxlength="80" placeholder="例如：把專案模板做成可複用 starter">
+            <button type="submit">新增</button>
+          </div>
+        </form>
+
+        <div class="filters" role="tablist" aria-label="Filter ideas">
+          <button class="filter is-active" type="button" data-filter="all">全部</button>
+          <button class="filter" type="button" data-filter="active">進行中</button>
+          <button class="filter" type="button" data-filter="done">完成</button>
+        </div>
+
+        <ul class="idea-list" id="idea-list" aria-live="polite"></ul>
+      </section>
+    </main>
+
+    <script src="./ideaStore.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
+

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ledger Lite</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="app-header" aria-label="Overview">
+        <div>
+          <p class="eyebrow">Ledger Lite</p>
+          <h1>記帳 App</h1>
+        </div>
+        <label class="month-picker" for="month-input">
+          <span>月份</span>
+          <input id="month-input" type="month">
+        </label>
+      </section>
+
+      <section class="summary-grid" aria-label="Monthly summary">
+        <article class="summary-card">
+          <span>收入</span>
+          <strong id="income-total">$0</strong>
+        </article>
+        <article class="summary-card">
+          <span>支出</span>
+          <strong id="expense-total">$0</strong>
+        </article>
+        <article class="summary-card balance-card">
+          <span>結餘</span>
+          <strong id="balance-total">$0</strong>
+        </article>
+        <article class="summary-card">
+          <span>預算使用</span>
+          <strong id="budget-percent">0%</strong>
+        </article>
+      </section>
+
+      <section class="layout">
+        <form class="entry-panel" id="entry-form">
+          <h2>新增紀錄</h2>
+          <div class="type-toggle" role="radiogroup" aria-label="Type">
+            <label>
+              <input type="radio" name="type" value="expense" checked>
+              <span>支出</span>
+            </label>
+            <label>
+              <input type="radio" name="type" value="income">
+              <span>收入</span>
+            </label>
+          </div>
+
+          <label>
+            <span>金額</span>
+            <input id="amount-input" name="amount" type="number" min="1" step="1" required>
+          </label>
+
+          <label>
+            <span>分類</span>
+            <select id="category-input" name="category" required>
+              <option value="餐飲">餐飲</option>
+              <option value="交通">交通</option>
+              <option value="購物">購物</option>
+              <option value="居家">居家</option>
+              <option value="娛樂">娛樂</option>
+              <option value="薪資">薪資</option>
+              <option value="其他">其他</option>
+            </select>
+          </label>
+
+          <label>
+            <span>日期</span>
+            <input id="date-input" name="date" type="date" required>
+          </label>
+
+          <label>
+            <span>備註</span>
+            <input id="note-input" name="note" type="text" maxlength="60" placeholder="例如：午餐、捷運、訂閱費">
+          </label>
+
+          <label>
+            <span>本月支出預算</span>
+            <input id="budget-input" type="number" min="0" step="100">
+          </label>
+
+          <div class="form-actions">
+            <button type="submit">新增</button>
+            <button class="ghost-button" id="export-button" type="button">匯出</button>
+          </div>
+        </form>
+
+        <section class="book-panel" aria-label="Transactions">
+          <div class="panel-head">
+            <h2>收支紀錄</h2>
+            <select id="filter-input" aria-label="Filter transactions">
+              <option value="all">全部</option>
+              <option value="expense">支出</option>
+              <option value="income">收入</option>
+            </select>
+          </div>
+
+          <div class="category-panel">
+            <div class="panel-head compact">
+              <h3>分類支出</h3>
+              <span id="top-category">尚無支出</span>
+            </div>
+            <div id="category-bars" class="category-bars"></div>
+          </div>
+
+          <ul class="transaction-list" id="transaction-list" aria-live="polite"></ul>
+        </section>
+      </section>
+    </main>
+
+    <script src="./ledgerStore.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
+
