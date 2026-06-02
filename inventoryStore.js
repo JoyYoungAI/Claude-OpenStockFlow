@@ -268,6 +268,8 @@
         nextStatus = "confirmed";
       } else if (action === "requestVoid" && (currentStatus === "confirmed" || currentStatus === "amended")) {
         nextStatus = "voidRequested";
+      } else if (action === "cancelVoid" && currentStatus === "voidRequested") {
+        nextStatus = "confirmed";
       } else {
         return { error: "INVALID_APPROVAL_TRANSITION" };
       }
@@ -330,6 +332,7 @@
 
     const txCtx = Object.assign({}, ctx, {
       findProduct,
+      findPartner,
       findWarehouse,
       resolveActiveWarehouse,
       stockForProduct,

@@ -567,6 +567,7 @@ function render() {
   renderMetrics();
   renderProductOptions();
   renderWarehouseOptions();
+  renderTransferProductOptions();
   renderDepartmentOptions();
   renderPartnerOptions();
   renderOverview();
@@ -579,7 +580,9 @@ function render() {
   renderEmployees();
   renderPartners();
   renderPurchases();
+  renderPurchaseReturns();
   renderSales();
+  renderSalesReturns();
   renderAdjustments();
   renderTransfers();
   renderFinance();
@@ -1008,7 +1011,7 @@ function returnDocumentButton(item, type) {
 
 function documentWorkflowButtons(item, type) {
   if (!item || isVoidedDocument(item)) { return ""; }
-  const buttonsByStatus = { draft: [["submit"]], rejected: [["submit"]], submitted: [["approve", "approveDocument"], ["reject"]], approved: [["confirm"], ["reject"]], confirmed: [["requestVoid", "requestVoid"]], amended: [["requestVoid", "requestVoid"]] };
+  const buttonsByStatus = { draft: [["submit"]], rejected: [["submit"]], submitted: [["approve", "approveDocument"], ["reject"]], approved: [["confirm"], ["reject"]], confirmed: [["requestVoid", "requestVoid"]], amended: [["requestVoid", "requestVoid"]], voidRequested: [["cancelVoid", "requestVoid"]] };
   const buttons = buttonsByStatus[item.status] || [];
   const idAttribute = type === "purchase" ? "data-purchase-id" : "data-sale-id";
   return buttons.map(([workflowAction, explicitPermissionAction]) => {
@@ -1032,12 +1035,12 @@ function reassignDocumentOwnerButton(item, type) {
 }
 
 function approvalActionLabel(workflowAction) {
-  const labels = { submit: t("actions.submitApproval", "送審"), approve: t("actions.approveDocument", "核准"), reject: t("actions.rejectDocument", "退回"), confirm: t("actions.confirmDocument", "確認"), requestVoid: t("actions.requestVoid", "申請作廢") };
+  const labels = { submit: t("actions.submitApproval", "送審"), approve: t("actions.approveDocument", "核准"), reject: t("actions.rejectDocument", "退回"), confirm: t("actions.confirmDocument", "確認"), requestVoid: t("actions.requestVoid", "申請作廢"), cancelVoid: t("actions.cancelVoid", "取消作廢申請") };
   return labels[workflowAction] || workflowAction;
 }
 
 function approvalActionTitle(workflowAction) {
-  const titles = { submit: t("tooltips.submitApproval", "送出審核，等待核准。"), approve: t("tooltips.approveDocument", "核准後仍需確認才會影響庫存與帳款。"), reject: t("tooltips.rejectDocument", "退回並保留原因與紀錄。"), confirm: t("tooltips.confirmDocument", "確認後才會正式影響庫存、財務與報表。"), requestVoid: t("tooltips.requestVoid", "提出作廢申請，等待管理者處理。") };
+  const titles = { submit: t("tooltips.submitApproval", "送出審核，等待核准。"), approve: t("tooltips.approveDocument", "核准後仍需確認才會影響庫存與帳款。"), reject: t("tooltips.rejectDocument", "退回並保留原因與紀錄。"), confirm: t("tooltips.confirmDocument", "確認後才會正式影響庫存、財務與報表。"), requestVoid: t("tooltips.requestVoid", "提出作廢申請，等待管理者處理。"), cancelVoid: t("tooltips.cancelVoid", "撤回作廢申請，單據恢復為已確認狀態。") };
   return titles[workflowAction] || "";
 }
 

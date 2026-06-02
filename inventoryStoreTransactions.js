@@ -15,6 +15,7 @@
       nextCostLayerId, incNextCostLayerId,
       // cross-domain dependencies
       findProduct,
+      findPartner,
       findWarehouse,
       resolveActiveWarehouse,
       stockForProduct,
@@ -46,6 +47,13 @@
       normalizeTransfer, copyTransfer,
       normalizeReturn, copyReturn
     } = models;
+
+    function resolvePartnerName(partnerId, role, fallbackName) {
+      if (!partnerId) return normalizeText(fallbackName);
+      const partner = findPartner(partnerId);
+      if (partner && partner.role === role && partner.active) return partner.name;
+      return normalizeText(fallbackName);
+    }
 
     function normalizeText(value) {
       return String(value || "").trim();
@@ -209,7 +217,12 @@
       const product = findProduct(purchase && purchase.productId);
       const warehouse = resolveActiveWarehouse(purchase && purchase.warehouseId);
       if (!purchase || !product || !product.active || !warehouse) return null;
-      const saved = Object.assign({}, purchase, { warehouseId: warehouse.id });
+      const supplierId = Number(input && input.supplierId) || 0;
+      const saved = Object.assign({}, purchase, {
+        warehouseId: warehouse.id,
+        supplierId,
+        supplier: resolvePartnerName(supplierId, "supplier", purchase.supplier)
+      });
       incNextPurchaseId();
       setPurchases([saved].concat(getPurchases()));
       if (input && input.createPayable) {
@@ -246,12 +259,14 @@
       const createdByEmployeeId = Number(input && input.createdByEmployeeId) || ownerEmployeeId;
       const lastEditedByEmployeeId = Number(input && input.lastEditedByEmployeeId) || 0;
       const created = items.map((item) => {
+        const supplierId = Number(input && input.supplierId) || 0;
         const purchase = {
           id: nextPurchaseId(),
           productId: item.productId,
           quantity: item.quantity,
           unitCost: item.unitCost,
-          supplier: normalizeText(input && input.supplier),
+          supplierId,
+          supplier: resolvePartnerName(supplierId, "supplier", normalizeText(input && input.supplier)),
           date, note: normalizeText(input && input.note),
           documentNo, warehouseId: warehouse.id,
           status, createPayable, dueDate, createdBy,
@@ -279,8 +294,11 @@
       if (stockForProduct(sale.productId, warehouse.id).onHand < sale.quantity) {
         return { error: "INSUFFICIENT_STOCK" };
       }
+      const customerId = Number(input && input.customerId) || 0;
       const saved = Object.assign({}, sale, {
         warehouseId: warehouse.id,
+        customerId,
+        customer: resolvePartnerName(customerId, "customer", sale.customer),
         costBasis: createCostBasis(sale.productId, sale.quantity)
       });
       incNextSaleId();
@@ -327,13 +345,15 @@
       const ownerDepartmentId = Number(input && input.ownerDepartmentId) || 0;
       const createdByEmployeeId = Number(input && input.createdByEmployeeId) || ownerEmployeeId;
       const lastEditedByEmployeeId = Number(input && input.lastEditedByEmployeeId) || 0;
+      const customerId = Number(input && input.customerId) || 0;
       const created = items.map((item) => {
         const sale = {
           id: nextSaleId(),
           productId: item.productId,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          customer: normalizeText(input && input.customer),
+          customerId,
+          customer: resolvePartnerName(customerId, "customer", normalizeText(input && input.customer)),
           date, note: normalizeText(input && input.note),
           documentNo, warehouseId: warehouse.id,
           status, createReceivable, dueDate, createdBy,

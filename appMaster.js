@@ -384,8 +384,11 @@ function renderProductOptions() {
 
 function renderWarehouseOptions() {
   const warehouses = store.listWarehouses({ activeOnly: true });
-  const options = warehouses.map((warehouse) => `<option value="${warehouse.id}">${escapeHtml(warehouse.code)} / ${escapeHtml(warehouse.name)}</option>`).join("");
+  const saleTypes = ["warehouse", "store"];
   document.querySelectorAll("[data-warehouse-select]").forEach((select) => {
+    const isSaleWarehouse = select.hasAttribute("data-sale-warehouse");
+    const filtered = isSaleWarehouse ? warehouses.filter((w) => saleTypes.includes(w.type)) : warehouses;
+    const options = filtered.map((warehouse) => `<option value="${warehouse.id}">${escapeHtml(warehouse.code)} / ${escapeHtml(warehouse.name)}</option>`).join("");
     const selected = select.value;
     select.innerHTML = options || `<option value="">${t("emptyStates.noAvailableWarehouses", "沒有可用倉庫")}</option>`;
     if (selected && Array.from(select.options).some((option) => option.value === selected)) { select.value = selected; }
@@ -394,3 +397,24 @@ function renderWarehouseOptions() {
 
 function renderDepartmentOptions() { masterDataUi.renderDepartmentOptions(); }
 function renderPartnerOptions() { masterDataUi.renderPartnerOptions(); }
+
+function renderTransferProductOptions() {
+  const fromWarehouseId = Number(document.querySelector("#transfer-from-warehouse") && document.querySelector("#transfer-from-warehouse").value);
+  const products = store.listProducts({ activeOnly: true });
+  const inventoryRows = store.inventoryReport();
+  const options = products.map((product) => {
+    const stock = inventoryRows
+      .filter((item) => item.productId === product.id && (!fromWarehouseId || item.warehouseId === fromWarehouseId))
+      .reduce((total, item) => total + item.onHand, 0);
+    const label = fromWarehouseId
+      ? t("common.warehouseStock", "倉庫庫存")
+      : t("common.totalStock", "總庫存");
+    return `<option value="${product.id}">${escapeHtml(product.sku)} / ${escapeHtml(product.name)} / ${label} ${formatQuantity(stock)}</option>`;
+  }).join("");
+  document.querySelectorAll("[data-transfer-product-select]").forEach((select) => {
+    const selected = select.value;
+    const blank = select.required ? "" : `<option value="">${t("fields.secondProductOptional", "不新增第二筆")}</option>`;
+    select.innerHTML = options ? blank + options : `<option value="">${t("emptyStates.noActiveProducts", "尚無啟用商品")}</option>`;
+    if (selected && Array.from(select.options).some((option) => option.value === selected)) { select.value = selected; }
+  });
+}

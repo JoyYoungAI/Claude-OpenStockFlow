@@ -377,13 +377,20 @@
             <div id="purchase-list" class="record-list"></div>
           </section>
         </div>
+        <section class="panel single-panel">
+          <div class="panel-head">
+            <h2>進貨退貨紀錄</h2>
+            <span id="purchase-return-count">0 筆</span>
+          </div>
+          <div id="purchase-return-list" class="record-list"></div>
+        </section>
       </section>
 
       <section class="view" data-view="sales">
         <div class="two-column">
           <form class="panel form-panel" id="sale-form">
             <h2>新增銷售單</h2>
-            <label><span>出貨倉庫</span><select name="warehouseId" data-warehouse-select required></select></label>
+            <label><span>出貨倉庫</span><select name="warehouseId" data-warehouse-select data-sale-warehouse required></select></label>
             <label><span>第 1 筆商品</span><select name="productId" data-product-select required></select></label>
             <div class="form-grid">
               <label><span>數量</span><input name="quantity" type="number" min="1" step="1" required></label>
@@ -415,6 +422,13 @@
             <div id="sale-list" class="record-list"></div>
           </section>
         </div>
+        <section class="panel single-panel">
+          <div class="panel-head">
+            <h2>銷售退貨紀錄</h2>
+            <span id="sale-return-count">0 筆</span>
+          </div>
+          <div id="sale-return-list" class="record-list"></div>
+        </section>
       </section>
 
       <section class="view" data-view="adjustments">
@@ -458,12 +472,12 @@
           <form class="panel form-panel" id="transfer-form">
             <h2>新增調撥單</h2>
             <div class="form-grid">
-              <label><span>來源倉庫</span><select name="fromWarehouseId" data-warehouse-select required></select></label>
+              <label><span>來源倉庫</span><select name="fromWarehouseId" data-warehouse-select id="transfer-from-warehouse" required></select></label>
               <label><span>目的倉庫</span><select name="toWarehouseId" data-warehouse-select required></select></label>
             </div>
-            <label><span>第 1 筆商品</span><select name="productId" data-product-select required></select></label>
+            <label><span>第 1 筆商品</span><select name="productId" data-transfer-product-select required></select></label>
             <label><span>第 1 筆數量</span><input name="quantity" type="number" min="1" step="1" required></label>
-            <label><span>第 2 筆商品（選填）</span><select name="productId2" data-product-select></select></label>
+            <label><span>第 2 筆商品（選填）</span><select name="productId2" data-transfer-product-select></select></label>
             <label><span>第 2 筆數量</span><input name="quantity2" type="number" min="1" step="1"></label>
             <label><span>日期</span><input name="date" type="date" required></label>
             <label><span>備註</span><input name="note" type="text" maxlength="80"></label>
@@ -499,7 +513,13 @@
             </div>
             <label><span>金額</span><input name="amount" type="number" min="0" step="0.01" data-numeric="money" required></label>
             <div class="form-grid">
-              <label><span>方式</span><input name="method" type="text" maxlength="30" placeholder="現金 / 匯款 / 支票"></label>
+              <label><span>方式</span><select name="method">
+                <option value="現金">現金</option>
+                <option value="匯款">匯款</option>
+                <option value="支票">支票</option>
+                <option value="信用卡">信用卡</option>
+                <option value="其他">其他</option>
+              </select></label>
               <label><span>日期</span><input name="date" type="date" required></label>
             </div>
             <label><span>備註</span><input name="note" type="text" maxlength="80"></label>

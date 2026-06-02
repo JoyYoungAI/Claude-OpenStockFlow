@@ -46,6 +46,10 @@ function bindAdjustmentHandlers() {
     render();
   });
 
+  const transferFromWarehouse = document.querySelector("#transfer-from-warehouse");
+  if (transferFromWarehouse) {
+    transferFromWarehouse.addEventListener("change", renderTransferProductOptions);
+  }
   adjustmentQuery.addEventListener("input", renderAdjustments);
   adjustmentMonth.addEventListener("change", renderAdjustments);
   transferQuery.addEventListener("input", renderTransfers);

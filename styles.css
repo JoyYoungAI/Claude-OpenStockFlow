@@ -848,3 +848,4 @@ td {
     position: static;
   }
 }
+.text-danger { color: var(--red); font-weight: 500; }

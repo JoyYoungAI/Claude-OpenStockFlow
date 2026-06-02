@@ -75,6 +75,24 @@ function bindPurchaseHandlers() {
   });
 }
 
+function renderPurchaseReturns() {
+  const returns = store.listReturns({ documentType: "purchaseReturn" });
+  document.querySelector("#purchase-return-count").textContent = `${formatCount(returns.length)} ${t("common.countUnit", "筆")}`;
+  document.querySelector("#purchase-return-list").innerHTML = returns.length
+    ? returns.map((item) => `
+      <article class="record-card">
+        <div>
+          <strong>${escapeHtml(productName(item.productId))}</strong>
+          <div class="record-meta">${escapeHtml(item.documentNo)} / ${formatDate(item.date)} / ${t("documentStatus.returnedQuantity", "已退")} ${formatQuantity(item.quantity)} / ${escapeHtml(item.reason || "")} / ${t("common.source", "來源")} ${escapeHtml(item.sourceDocumentNo || "-")}</div>
+        </div>
+        <div class="record-side">
+          <span class="amount expense">-${formatQuantity(item.quantity)} / ${formatRestrictedMoney(item.quantity * item.unitPrice, "viewCost")}</span>
+        </div>
+      </article>
+    `).join("")
+    : `<div class="empty">${t("emptyStates.noPurchaseReturns", "尚無進貨退貨紀錄。")}</div>`;
+}
+
 function renderPurchases() {
   const purchases = store.listPurchases({ query: purchaseQuery.value, month: purchaseMonth.value, includeVoided: purchaseIncludeVoided.checked });
   document.querySelector("#purchase-count").textContent = `${formatCount(purchases.length)} ${t("common.countUnit", "筆")}`;
@@ -83,7 +101,7 @@ function renderPurchases() {
       <article class="record-card">
         <div>
           <strong>${escapeHtml(productName(item.productId))} ${documentStatusBadge(item)}</strong>
-          <div class="record-meta">${escapeHtml(item.documentNo || t("common.noDocumentNo", "無單號"))} / ${formatDate(item.date)} / ${escapeHtml(warehouseName(item.warehouseId))} / ${escapeHtml(item.supplier || t("common.notFilled", "未填") + t("common.supplier", "供應商"))} / ${escapeHtml(documentResponsibilityText(item))} / ${escapeHtml(item.note || t("common.noNote", "無備註"))}${returnMeta(item, "purchaseReturn")}${voidMeta(item)}</div>
+          <div class="record-meta">${escapeHtml(item.documentNo || t("common.noDocumentNo", "無單號"))} / ${formatDate(item.date)} / ${escapeHtml(warehouseName(item.warehouseId))} / ${item.supplier ? escapeHtml(item.supplier) : `<span class="text-danger">${t("common.notFilled", "未填")}${t("common.supplier", "供應商")}</span>`} /${escapeHtml(documentResponsibilityText(item))} / ${escapeHtml(item.note || t("common.noNote", "無備註"))}${returnMeta(item, "purchaseReturn")}${voidMeta(item)}</div>
           ${voidDetailPanel(item, "purchase")}
         </div>
         <div class="record-side">

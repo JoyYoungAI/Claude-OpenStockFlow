@@ -575,6 +575,25 @@ assert.equal(layerStore.listCostLayers()[0].remainingQuantity, 7, "remainingQuan
 layerStore.addSaleOrder({ customer: "C", date: "2026-03-03", items: [{ productId: 1, quantity: 7, unitPrice: 200 }] });
 assert.equal(layerStore.listCostLayers()[0].remainingQuantity, 0, "layer fully consumed");
 
+// ── supplierId / customerId FK 自動帶入名稱 ──────────────────────────────────
+const fkStore = createInventoryStore({
+  products: [{ id: 1, sku: "X001", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+  partners: [
+    { id: 1, role: "supplier", name: "優質供應商", contact: "", phone: "", note: "", active: true },
+    { id: 2, role: "customer", name: "黃金客戶", contact: "", phone: "", note: "", active: true }
+  ],
+  purchases: [], sales: []
+});
+const fkPurchase = fkStore.addPurchase({ productId: 1, quantity: 5, unitCost: 100, supplierId: 1, date: "2026-04-01" });
+assert.equal(fkPurchase.supplier, "優質供應商", "supplier name auto-filled from supplierId");
+assert.equal(fkPurchase.supplierId, 1, "supplierId stored on purchase");
+const fkSaleOrder = fkStore.addSaleOrder({ customerId: 2, date: "2026-04-02", items: [{ productId: 1, quantity: 2, unitPrice: 200 }] });
+assert.equal(fkSaleOrder.lines[0].customer, "黃金客戶", "customer name auto-filled from customerId");
+assert.equal(fkSaleOrder.lines[0].customerId, 2, "customerId stored on sale");
+const fkPurchaseTextOnly = fkStore.addPurchase({ productId: 1, quantity: 1, unitCost: 100, supplier: "手動輸入商", date: "2026-04-03" });
+assert.equal(fkPurchaseTextOnly.supplier, "手動輸入商", "fallback to text when no supplierId");
+assert.equal(fkPurchaseTextOnly.supplierId, 0, "supplierId defaults to 0");
+
 console.log("All tests passed.");
 
 console.log("inventoryStore tests passed");

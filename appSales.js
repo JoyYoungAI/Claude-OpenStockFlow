@@ -74,6 +74,24 @@ function bindSaleHandlers() {
   });
 }
 
+function renderSalesReturns() {
+  const returns = store.listReturns({ documentType: "salesReturn" });
+  document.querySelector("#sale-return-count").textContent = `${formatCount(returns.length)} ${t("common.countUnit", "筆")}`;
+  document.querySelector("#sale-return-list").innerHTML = returns.length
+    ? returns.map((item) => `
+      <article class="record-card">
+        <div>
+          <strong>${escapeHtml(productName(item.productId))}</strong>
+          <div class="record-meta">${escapeHtml(item.documentNo)} / ${formatDate(item.date)} / ${t("documentStatus.returnedQuantity", "已退")} ${formatQuantity(item.quantity)} / ${escapeHtml(item.reason || "")} / ${t("common.source", "來源")} ${escapeHtml(item.sourceDocumentNo || "-")}</div>
+        </div>
+        <div class="record-side">
+          <span class="amount income">+${formatQuantity(item.quantity)} / ${formatRestrictedMoney(item.quantity * item.unitPrice, "viewSalesRevenue")}</span>
+        </div>
+      </article>
+    `).join("")
+    : `<div class="empty">${t("emptyStates.noSalesReturns", "尚無銷售退貨紀錄。")}</div>`;
+}
+
 function renderSales() {
   const sales = store.listSales({ query: saleQuery.value, month: saleMonth.value, includeVoided: saleIncludeVoided.checked });
   document.querySelector("#sale-count").textContent = `${formatCount(sales.length)} ${t("common.countUnit", "筆")}`;
@@ -82,7 +100,7 @@ function renderSales() {
       <article class="record-card">
         <div>
           <strong>${escapeHtml(productName(item.productId))} ${documentStatusBadge(item)}</strong>
-          <div class="record-meta">${escapeHtml(item.documentNo || t("common.noDocumentNo", "無單號"))} / ${formatDate(item.date)} / ${escapeHtml(warehouseName(item.warehouseId))} / ${escapeHtml(item.customer || t("common.notFilled", "未填") + t("common.customer", "客戶"))} / ${escapeHtml(documentResponsibilityText(item))} / ${escapeHtml(item.note || t("common.noNote", "無備註"))}${returnMeta(item, "salesReturn")}${voidMeta(item)}</div>
+          <div class="record-meta">${escapeHtml(item.documentNo || t("common.noDocumentNo", "無單號"))} / ${formatDate(item.date)} / ${escapeHtml(warehouseName(item.warehouseId))} / ${item.customer ? escapeHtml(item.customer) : `<span class="text-danger">${t("common.notFilled", "未填")}${t("common.customer", "客戶")}</span>`} /${escapeHtml(documentResponsibilityText(item))} / ${escapeHtml(item.note || t("common.noNote", "無備註"))}${returnMeta(item, "salesReturn")}${voidMeta(item)}</div>
           ${voidDetailPanel(item, "sale")}
         </div>
         <div class="record-side">

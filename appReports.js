@@ -92,10 +92,19 @@ function moveLearningTopic(direction) {
 function normalizeLearningQuery(value) { return String(value || "").trim().toLowerCase(); }
 
 function renderOverview() {
-  const lowStock = store.inventoryReport({ lowStockOnly: true });
-  document.querySelector("#overview-low-count").textContent = `${formatCount(lowStock.length)} ${t("common.itemUnit", "項")}`;
-  document.querySelector("#low-stock-list").innerHTML = lowStock.length
-    ? lowStock.map((item) => `
+  const lowStockRows = store.inventoryReport({ lowStockOnly: true });
+  const lowStockByProduct = Object.values(
+    lowStockRows.reduce((acc, item) => {
+      if (!acc[item.productId]) {
+        acc[item.productId] = { product: item.product, onHand: 0 };
+      }
+      acc[item.productId].onHand += item.onHand;
+      return acc;
+    }, {})
+  );
+  document.querySelector("#overview-low-count").textContent = `${formatCount(lowStockByProduct.length)} ${t("common.itemUnit", "項")}`;
+  document.querySelector("#low-stock-list").innerHTML = lowStockByProduct.length
+    ? lowStockByProduct.map((item) => `
       <article class="compact-card">
         <strong>${escapeHtml(item.product.name)}</strong>
         <span class="compact-meta">${escapeHtml(item.product.sku)} / ${t("common.stock", "庫存")} ${formatQuantity(item.onHand)} ${escapeHtml(item.product.unit)} / ${t("fields.safetyStock", "安全庫存")} ${formatQuantity(item.product.safetyStock)}</span>
