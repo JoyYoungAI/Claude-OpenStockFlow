@@ -1,6 +1,6 @@
 (function (global) {
   const storageKey = "stockflow-inventory-state";
-  const dataSchemaVersion = 11;
+  const SCHEMA_VERSION = 11;
 
   function createInventoryStorage(config) {
     const seedState = config.seedState;
@@ -80,7 +80,7 @@
         preferences: rawState.preferences || {}
       };
 
-      if (saved.schemaVersion === dataSchemaVersion) {
+      if (saved.schemaVersion === SCHEMA_VERSION) {
         return {
           state,
           notice: ""
@@ -89,13 +89,13 @@
 
       return {
         state,
-        notice: `已將本機資料升級到資料版本 ${dataSchemaVersion}。`
+        notice: `已將本機資料升級到資料版本 ${SCHEMA_VERSION}。`
       };
     }
 
     function createStorageEnvelope(state) {
       return {
-        schemaVersion: dataSchemaVersion,
+        schemaVersion: SCHEMA_VERSION,
         appVersion,
         assetVersion,
         savedAt: new Date().toISOString(),

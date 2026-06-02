@@ -294,7 +294,7 @@
         sku: product ? product.sku : "",
         productName: product ? product.name : "未知商品",
         quantity: isSalesReturn ? returnRow.quantity : -returnRow.quantity,
-        amount: returnRow.quantity * returnRow.unitAmount,
+        amount: returnRow.quantity * returnRow.unitPrice,
         party: returnRow.sourceDocumentNo,
         note: returnRow.reason,
         documentNo: returnRow.documentNo
@@ -375,7 +375,7 @@
       - (state.returns || [])
         .filter(isActiveDocument)
         .filter((returnRow) => returnRow.documentType === "salesReturn" && returnRow.productId === Number(productId) && (!warehouseId || returnRow.warehouseId === Number(warehouseId)))
-        .reduce((total, returnRow) => total + returnRow.quantity * returnRow.unitAmount, 0);
+        .reduce((total, returnRow) => total + returnRow.quantity * returnRow.unitPrice, 0);
     const netPurchased = purchased - purchaseReturned;
     const netSold = sold - salesReturned;
     const onHand = netPurchased + adjusted + transferredIn - transferredOut - netSold;

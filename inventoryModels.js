@@ -264,6 +264,7 @@
       id,
       productId,
       warehouseId: Number(input && input.warehouseId) || 0,
+      supplierId: Number(input && input.supplierId) || 0,
       quantity,
       unitCost,
       supplier: normalizeText(input && input.supplier),
@@ -308,6 +309,7 @@
       id,
       productId,
       warehouseId: Number(input && input.warehouseId) || 0,
+      customerId: Number(input && input.customerId) || 0,
       quantity,
       unitPrice,
       customer: normalizeText(input && input.customer),
@@ -357,7 +359,10 @@
       reason: normalizeText(input && input.reason) || "調整",
       date,
       note: normalizeText(input && input.note),
-      documentNo: normalizeText(input && input.documentNo)
+      documentNo: normalizeText(input && input.documentNo),
+      status: normalizeDocumentStatus(input && input.status),
+      createdBy: normalizeText(input && input.createdBy),
+      createdByEmployeeId: Number(input && input.createdByEmployeeId) || 0
     };
   }
 
@@ -380,7 +385,10 @@
       quantity,
       date,
       note: normalizeText(input && input.note),
-      documentNo: normalizeText(input && input.documentNo)
+      documentNo: normalizeText(input && input.documentNo),
+      status: normalizeDocumentStatus(input && input.status),
+      createdBy: normalizeText(input && input.createdBy),
+      createdByEmployeeId: Number(input && input.createdByEmployeeId) || 0
     };
   }
 
@@ -389,10 +397,12 @@
     const productId = Number(input && input.productId);
     const warehouseId = Number(input && input.warehouseId);
     const quantity = positiveNumber(input && input.quantity);
-    const unitAmount = nonNegativeNumber(input && input.unitAmount);
+    const unitPrice = nonNegativeNumber(input && input.unitPrice) !== null
+      ? nonNegativeNumber(input && input.unitPrice)
+      : nonNegativeNumber(input && input.unitAmount);
     const date = normalizeDate(input && input.date);
 
-    if (!["salesReturn", "purchaseReturn"].includes(documentType) || !productId || !warehouseId || quantity === null || unitAmount === null || !date) {
+    if (!["salesReturn", "purchaseReturn"].includes(documentType) || !productId || !warehouseId || quantity === null || unitPrice === null || !date) {
       return null;
     }
 
@@ -405,7 +415,7 @@
       productId,
       warehouseId,
       quantity,
-      unitAmount,
+      unitPrice,
       costBasis: normalizeCostBasis(input && input.costBasis),
       reason: normalizeText(input && input.reason),
       date,
@@ -631,7 +641,7 @@
       productId: Number(returnRow.productId),
       warehouseId: Number(returnRow.warehouseId) || 0,
       quantity: positiveNumber(returnRow.quantity) || 0,
-      unitAmount: nonNegativeNumber(returnRow.unitAmount) || 0,
+      unitPrice: nonNegativeNumber(returnRow.unitPrice !== undefined ? returnRow.unitPrice : returnRow.unitAmount) || 0,
       costBasis: normalizeCostBasis(returnRow.costBasis),
       reason: normalizeText(returnRow.reason),
       date: normalizeDate(returnRow.date),
