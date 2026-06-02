@@ -518,6 +518,7 @@
       });
       nextSaleId += 1;
       sales = [saved].concat(sales);
+      consumeCostLayers(saved.productId, saved.warehouseId, saved.quantity);
       if (input && input.createReceivable) {
         addReceivable({
           sourceType: "sale",
@@ -595,6 +596,7 @@
 
       sales = created.concat(sales);
       if (isDocumentEffective({ status })) {
+        created.forEach((line) => consumeCostLayers(line.productId, line.warehouseId, line.quantity));
         applySaleOrderEffects(documentNo);
       }
 
@@ -636,6 +638,11 @@
           relatedDocumentNos: mergeDocumentNos(payable.relatedDocumentNos, [purchase.documentNo])
         })
         : payable);
+      costLayers = costLayers.map((layer) =>
+        layer.sourceDocumentNo === purchase.documentNo && layer.sourceLineId === purchase.id
+          ? Object.assign({}, layer, { remainingQuantity: 0 })
+          : layer
+      );
       const latestEffectivePurchase = purchases.find(
         (p) => p.productId === purchase.productId && isDocumentEffective(p)
       );
@@ -1810,6 +1817,18 @@
         createdAt: new Date().toISOString()
       }].concat(costLayers);
       nextCostLayerId += 1;
+    }
+
+    function consumeCostLayers(productId, warehouseId, quantity) {
+      let toConsume = quantity;
+      costLayers = costLayers.slice().reverse().map((layer) => {
+        if (layer.productId !== Number(productId) || layer.warehouseId !== Number(warehouseId) || toConsume <= 0) {
+          return layer;
+        }
+        const consumed = Math.min(layer.remainingQuantity, toConsume);
+        toConsume -= consumed;
+        return Object.assign({}, layer, { remainingQuantity: layer.remainingQuantity - consumed });
+      }).reverse();
     }
 
     function createCostBasis(productId, quantity, capturedAt) {
