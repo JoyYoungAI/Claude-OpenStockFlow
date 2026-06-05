@@ -25,7 +25,7 @@ function bindSaleHandlers() {
       entityType: "sale", documentNo: sale.documentNo,
       relatedDocumentNos: [sale.documentNo],
       summary: `建立銷售單 ${sale.documentNo}`,
-      after: { lines: sale.lines.length, total: sale.total },
+      after: { lines: sale.lines.length, total: ClaudeOpenStockFlowModels.saleDocTotal(sale) },
       riskLevel: data.saveAsDraft ? "medium" : "high"
     });
     saleForm.reset();
@@ -102,7 +102,7 @@ function renderSales() {
         ? escapeHtml(doc.customerName)
         : `<span class="text-danger">${t("common.notFilled", "未填")}${t("common.customer", "客戶")}</span>`;
       const lines = doc.lines || [];
-      const linesTotal = lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+      const linesTotal = ClaudeOpenStockFlowModels.saleDocTotal(doc);
       const linesHtml = lines.map((line) => {
         const returned = allReturns.filter((r) => r.sourceLineId === line.lineId).reduce((s, r) => s + r.quantity, 0);
         const remaining = line.quantity - returned;

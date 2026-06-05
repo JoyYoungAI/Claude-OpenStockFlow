@@ -24,7 +24,7 @@ function bindPurchaseHandlers() {
       entityType: "purchase", documentNo: purchase.documentNo,
       relatedDocumentNos: [purchase.documentNo],
       summary: `建立進貨單 ${purchase.documentNo}`,
-      after: { lines: purchase.lines.length, total: purchase.total },
+      after: { lines: purchase.lines.length, total: ClaudeOpenStockFlowModels.purchaseDocTotal(purchase) },
       riskLevel: data.saveAsDraft ? "medium" : "high"
     });
     purchaseForm.reset();
@@ -103,7 +103,7 @@ function renderPurchases() {
         ? escapeHtml(doc.supplierName)
         : `<span class="text-danger">${t("common.notFilled", "未填")}${t("common.supplier", "供應商")}</span>`;
       const lines = doc.lines || [];
-      const linesTotal = lines.reduce((sum, l) => sum + l.quantity * l.unitCost, 0);
+      const linesTotal = ClaudeOpenStockFlowModels.purchaseDocTotal(doc);
       const linesHtml = lines.map((line) => {
         const returned = allReturns.filter((r) => r.sourceLineId === line.lineId).reduce((s, r) => s + r.quantity, 0);
         const remaining = line.quantity - returned;

@@ -92,11 +92,16 @@
     return { id: Number(payment.id), direction: payment.direction === "out" ? "out" : "in", targetType: payment.targetType === "payable" ? "payable" : "receivable", targetId: Number(payment.targetId), amount: positiveNumber(payment.amount) || 0, method: normalizeText(payment.method), date: normalizeDate(payment.date), note: normalizeText(payment.note) };
   }
 
+  function remainingBalance(item) {
+    return (item ? item.amount || 0 : 0) - (item ? item.paidAmount || 0 : 0);
+  }
+
   const api = {
     financeStatus, normalizeFinanceStatus,
     normalizeReceivable, copyReceivable,
     normalizePayable, copyPayable,
-    normalizePayment, copyPayment
+    normalizePayment, copyPayment,
+    remainingBalance
   };
 
   global.ClaudeOpenStockFlowModelsFinance = api;

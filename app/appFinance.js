@@ -92,7 +92,7 @@ function renderFinance() {
 }
 
 function financeTargetCard(item, partyField, fieldName) {
-  const balance = item.amount - item.paidAmount;
+  const balance = ClaudeOpenStockFlowModels.remainingBalance(item);
   return `
     <article class="record-card">
       <div>
@@ -120,7 +120,7 @@ function renderPaymentTargets() {
   paymentTarget.innerHTML = rows.length
     ? rows.map((item) => {
       const party = direction === "out" ? item.supplier : item.customer;
-      const balance = item.amount - item.paidAmount;
+      const balance = ClaudeOpenStockFlowModels.remainingBalance(item);
       return `<option value="${item.id}">${escapeHtml(item.sourceDocumentNo || t("common.noDocumentNo", "無單號"))} / ${escapeHtml(party || t("common.notFilled", "未填") + t("tables.party", "對象"))} / ${formatMoney(balance)}</option>`;
     }).join("")
     : `<option value="">${t("emptyStates.noPaymentTargets", "沒有可沖帳項目")}</option>`;

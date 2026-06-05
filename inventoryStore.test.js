@@ -607,6 +607,25 @@ const models = require("./core/inventoryModels");
 ["normalizePurchase", "copyPurchase", "normalizeSale", "normalizeReturn", "normalizeDocumentStatus", "defaultPreferences"].forEach((fn) => {
   assert.equal(typeof models[fn], "function", `transaction/shared model export missing: ${fn}`);
 });
+["purchaseDocTotal", "saleDocTotal"].forEach((fn) => {
+  assert.equal(typeof models[fn], "function", `document total helper missing: ${fn}`);
+});
+assert.equal(typeof models.remainingBalance, "function", "finance model export missing: remainingBalance");
+
+// ── purchaseDocTotal / saleDocTotal ───────────────────────────────────────────
+const docWithLines = { lines: [{ quantity: 3, unitCost: 100 }, { quantity: 2, unitCost: 50 }] };
+assert.equal(models.purchaseDocTotal(docWithLines), 400, "purchaseDocTotal: 3*100 + 2*50");
+assert.equal(models.purchaseDocTotal({ lines: [] }), 0, "purchaseDocTotal: empty lines");
+assert.equal(models.purchaseDocTotal({}), 0, "purchaseDocTotal: no lines field");
+const saleDocWithLines = { lines: [{ quantity: 4, unitPrice: 200 }, { quantity: 1, unitPrice: 80 }] };
+assert.equal(models.saleDocTotal(saleDocWithLines), 880, "saleDocTotal: 4*200 + 1*80");
+assert.equal(models.saleDocTotal({ lines: [] }), 0, "saleDocTotal: empty lines");
+
+// ── remainingBalance ──────────────────────────────────────────────────────────
+assert.equal(models.remainingBalance({ amount: 1000, paidAmount: 400 }), 600, "remainingBalance: partial");
+assert.equal(models.remainingBalance({ amount: 500, paidAmount: 500 }), 0, "remainingBalance: fully paid");
+assert.equal(models.remainingBalance({ amount: 200, paidAmount: 0 }), 200, "remainingBalance: unpaid");
+assert.equal(models.remainingBalance(null), 0, "remainingBalance: null-safe");
 
 console.log("All tests passed.");
 

@@ -36,7 +36,8 @@ import inventoryModelsFinance, {
   normalizeFinanceStatus,
   normalizePayable,
   normalizePayment,
-  normalizeReceivable
+  normalizeReceivable,
+  remainingBalance
 } from "./inventoryModelsFinance.mjs";
 
 function normalizeDocumentStatus(status) {
@@ -394,6 +395,16 @@ function loadSaleDocs(items) {
   return items.map(copySaleDoc);
 }
 
+function purchaseDocTotal(doc) {
+  const lines = Array.isArray(doc && doc.lines) ? doc.lines : [];
+  return lines.reduce((sum, l) => sum + l.quantity * l.unitCost, 0);
+}
+
+function saleDocTotal(doc) {
+  const lines = Array.isArray(doc && doc.lines) ? doc.lines : [];
+  return lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+}
+
 function copyPurchase(item) {
   if (item && Array.isArray(item.lines)) { return copyPurchaseDoc(item); }
   return flatPurchaseToDoc(item);
@@ -493,6 +504,7 @@ const inventoryModels = Object.assign(
     flatPurchaseToDoc, flatSaleToDoc,
     groupFlatPurchasesToDocs, groupFlatSalesToDocs,
     loadPurchaseDocs, loadSaleDocs,
+    purchaseDocTotal, saleDocTotal,
     copyPurchase, copySale, copyAdjustment, copyTransfer, copyReturn,
     defaultPreferences, normalizePreferences,
     defaultWarehouse, ensureWarehouseOnRow,
@@ -513,12 +525,14 @@ export {
   normalizeReceivable, copyReceivable,
   normalizePayable, copyPayable,
   normalizePayment, copyPayment,
+  remainingBalance,
   normalizePurchase, normalizeSale, normalizeAdjustment, normalizeTransfer, normalizeReturn,
   copyPurchaseLine, copySaleLine, copyDocumentHeader,
   copyPurchaseDoc, copySaleDoc,
   flatPurchaseToDoc, flatSaleToDoc,
   groupFlatPurchasesToDocs, groupFlatSalesToDocs,
   loadPurchaseDocs, loadSaleDocs,
+  purchaseDocTotal, saleDocTotal,
   copyPurchase, copySale, copyAdjustment, copyTransfer, copyReturn,
   defaultPreferences, normalizePreferences,
   defaultWarehouse, ensureWarehouseOnRow,

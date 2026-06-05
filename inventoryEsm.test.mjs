@@ -42,7 +42,8 @@ import inventoryModelsFinance, {
   normalizeFinanceStatus,
   normalizePayable,
   normalizePayment,
-  normalizeReceivable
+  normalizeReceivable,
+  remainingBalance
 } from "./esm/inventoryModelsFinance.mjs";
 import inventoryModels, {
   copyAdjustment,
@@ -64,6 +65,8 @@ import inventoryModels, {
   groupFlatSalesToDocs,
   loadPurchaseDocs,
   loadSaleDocs,
+  purchaseDocTotal,
+  saleDocTotal,
   normalizeAdjustment,
   normalizeDocumentNoList,
   normalizeDocumentStatus,
@@ -157,7 +160,8 @@ const financeExportedNames = [
   "normalizeFinanceStatus",
   "normalizePayable",
   "normalizePayment",
-  "normalizeReceivable"
+  "normalizeReceivable",
+  "remainingBalance"
 ];
 const combinedOwnExportedNames = [
   "copyAdjustment",
@@ -179,6 +183,8 @@ const combinedOwnExportedNames = [
   "groupFlatSalesToDocs",
   "loadPurchaseDocs",
   "loadSaleDocs",
+  "purchaseDocTotal",
+  "saleDocTotal",
   "normalizeAdjustment",
   "normalizeDocumentNoList",
   "normalizeDocumentStatus",
@@ -258,6 +264,9 @@ const combinedNamedExports = {
   groupFlatSalesToDocs,
   loadPurchaseDocs,
   loadSaleDocs,
+  purchaseDocTotal,
+  saleDocTotal,
+  remainingBalance,
   normalizeAdjustment,
   normalizeDepartment,
   normalizeDepartmentType,

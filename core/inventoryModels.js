@@ -481,6 +481,18 @@
     return Object.assign({}, row, { warehouseId: Number(row && row.warehouseId) || warehouseId });
   }
 
+  // ── Document total helpers ───────────────────────────────────────────────────
+
+  function purchaseDocTotal(doc) {
+    const lines = Array.isArray(doc && doc.lines) ? doc.lines : [];
+    return lines.reduce((sum, l) => sum + l.quantity * l.unitCost, 0);
+  }
+
+  function saleDocTotal(doc) {
+    const lines = Array.isArray(doc && doc.lines) ? doc.lines : [];
+    return lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+  }
+
   // ── Combined export ───────────────────────────────────────────────────────────
 
   const api = Object.assign(
@@ -494,6 +506,7 @@
       flatPurchaseToDoc, flatSaleToDoc,
       loadPurchaseDocs, loadSaleDocs,
       groupFlatPurchasesToDocs, groupFlatSalesToDocs,
+      purchaseDocTotal, saleDocTotal,
       defaultPreferences, normalizePreferences,
       defaultWarehouse, ensureWarehouseOnRow,
       normalizeDocumentStatus, normalizeDocumentNoList
