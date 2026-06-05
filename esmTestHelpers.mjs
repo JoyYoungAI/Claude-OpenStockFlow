@@ -351,6 +351,16 @@ function createTransactionsHarness(createTransactionsModule) {
   const normalizeDocumentNoList = (value) => Array.isArray(value) ? value.map(normalizeText).filter(Boolean) : [];
   const mergeDocumentNos = (current, additions) => Array.from(new Set(normalizeDocumentNoList(current).concat(normalizeDocumentNoList(additions))));
   const financeStatus = (amount, paidAmount) => paidAmount <= 0 ? "open" : (paidAmount >= amount ? "paid" : "partial");
+  const nextDocumentNo = (prefix, date, docs) => {
+    const base = `${prefix}-${date.slice(0, 7).replace("-", "")}-`;
+    const max = docs.reduce((cur, doc) => {
+      const val = normalizeText(doc.documentNo);
+      if (!val.startsWith(base)) return cur;
+      const n = Number(val.slice(base.length));
+      return Number.isFinite(n) ? Math.max(cur, n) : cur;
+    }, 0);
+    return `${base}${String(max + 1).padStart(3, "0")}`;
+  };
   const isDocumentEffective = (row) => !row || !row.status || row.status === "confirmed" || row.status === "amended" || row.status === "voidRequested";
   const isVoidedDocument = (row) => row && (row.status === "voided" || row.status === "reversed");
   const sameDocument = (row, documentNo, id) => {
@@ -567,7 +577,8 @@ function createTransactionsHarness(createTransactionsModule) {
       return ["draft", "submitted", "approved", "rejected", "confirmed", "amended", "voidRequested", "voided", "reversed"].includes(value) ? value : "confirmed";
     },
     transitionDocumentRows,
-    updateDocumentOwnerRows
+    updateDocumentOwnerRows,
+    nextDocumentNo
   };
   return { api: createTransactionsModule(ctx), state };
 }

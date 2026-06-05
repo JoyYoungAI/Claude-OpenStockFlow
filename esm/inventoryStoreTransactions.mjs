@@ -43,7 +43,8 @@ function createTransactionsModule(ctx) {
     mergeDocumentNos,
     normalizeDocumentStatus,
     transitionDocumentRows,
-    updateDocumentOwnerRows
+    updateDocumentOwnerRows,
+    nextDocumentNo
   } = ctx;
 
   function resolvePartnerName(partnerId, role, fallbackName) {
@@ -85,18 +86,6 @@ function createTransactionsModule(ctx) {
       if (!productId || quantity === null || price === null) return null;
       return { productId, quantity, [priceField]: price };
     }).filter(Boolean);
-  }
-
-  function nextDocumentNo(prefix, date, docs) {
-    const yyyymm = date.slice(0, 7).replace("-", "");
-    const base = `${prefix}-${yyyymm}-`;
-    const max = docs.reduce((current, doc) => {
-      const value = normalizeText(doc.documentNo);
-      if (!value.startsWith(base)) return current;
-      const number = Number(value.slice(base.length));
-      return Number.isFinite(number) ? Math.max(current, number) : current;
-    }, 0);
-    return `${base}${String(max + 1).padStart(3, "0")}`;
   }
 
   function copyCostLayer(layer) {

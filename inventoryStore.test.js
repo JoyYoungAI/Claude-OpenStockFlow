@@ -607,8 +607,8 @@ const models = require("./core/inventoryModels");
 ["normalizePurchase", "copyPurchase", "normalizeSale", "normalizeReturn", "normalizeDocumentStatus", "defaultPreferences"].forEach((fn) => {
   assert.equal(typeof models[fn], "function", `transaction/shared model export missing: ${fn}`);
 });
-["purchaseDocTotal", "saleDocTotal"].forEach((fn) => {
-  assert.equal(typeof models[fn], "function", `document total helper missing: ${fn}`);
+["purchaseDocTotal", "saleDocTotal", "isVoidedDocument"].forEach((fn) => {
+  assert.equal(typeof models[fn], "function", `document helper missing: ${fn}`);
 });
 assert.equal(typeof models.remainingBalance, "function", "finance model export missing: remainingBalance");
 
@@ -620,6 +620,12 @@ assert.equal(models.purchaseDocTotal({}), 0, "purchaseDocTotal: no lines field")
 const saleDocWithLines = { lines: [{ quantity: 4, unitPrice: 200 }, { quantity: 1, unitPrice: 80 }] };
 assert.equal(models.saleDocTotal(saleDocWithLines), 880, "saleDocTotal: 4*200 + 1*80");
 assert.equal(models.saleDocTotal({ lines: [] }), 0, "saleDocTotal: empty lines");
+
+// ── isVoidedDocument ─────────────────────────────────────────────────────────
+assert.equal(models.isVoidedDocument({ status: "voided" }), true, "isVoidedDocument: voided");
+assert.equal(models.isVoidedDocument({ status: "reversed" }), true, "isVoidedDocument: reversed");
+assert.equal(models.isVoidedDocument({ status: "confirmed" }), false, "isVoidedDocument: confirmed");
+assert.equal(models.isVoidedDocument(null), false, "isVoidedDocument: null-safe");
 
 // ── remainingBalance ──────────────────────────────────────────────────────────
 assert.equal(models.remainingBalance({ amount: 1000, paidAmount: 400 }), 600, "remainingBalance: partial");

@@ -481,6 +481,12 @@
     return Object.assign({}, row, { warehouseId: Number(row && row.warehouseId) || warehouseId });
   }
 
+  // ── Document status predicates ───────────────────────────────────────────────
+
+  function isVoidedDocument(doc) {
+    return doc != null && (doc.status === "voided" || doc.status === "reversed");
+  }
+
   // ── Document total helpers ───────────────────────────────────────────────────
 
   function purchaseDocTotal(doc) {
@@ -507,6 +513,7 @@
       loadPurchaseDocs, loadSaleDocs,
       groupFlatPurchasesToDocs, groupFlatSalesToDocs,
       purchaseDocTotal, saleDocTotal,
+      isVoidedDocument,
       defaultPreferences, normalizePreferences,
       defaultWarehouse, ensureWarehouseOnRow,
       normalizeDocumentStatus, normalizeDocumentNoList

@@ -34,7 +34,7 @@ import {
   warehouseStockSummary as reportWarehouseStockSummary,
   warehouseTransferSummary as reportWarehouseTransferSummary
 } from "./inventoryReports.mjs";
-import { nonNegativeNumber } from "./inventoryUtils.mjs";
+import { nonNegativeNumber, nextDocumentNo } from "./inventoryUtils.mjs";
 import { createMasterModule } from "./inventoryStoreMaster.mjs";
 import { createFinanceModule } from "./inventoryStoreFinance.mjs";
 import { createTransactionsModule } from "./inventoryStoreTransactions.mjs";
@@ -355,7 +355,8 @@ function createInventoryStore(initialState) {
     mergeDocumentNos,
     normalizeDocumentStatus,
     transitionDocumentRows,
-    updateDocumentOwnerRows
+    updateDocumentOwnerRows,
+    nextDocumentNo
   });
   const transactionsModule = createTransactionsModule(txCtx);
 

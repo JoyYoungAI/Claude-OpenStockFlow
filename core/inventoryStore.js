@@ -1,7 +1,10 @@
 (function (global) {
   const models = global.ClaudeOpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
   const reports = global.ClaudeOpenStockFlowReports || (typeof require !== "undefined" ? require("./inventoryReports") : {});
+  const utils = global.ClaudeOpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
+  const { nextDocumentNo } = utils;
   const {
+    isVoidedDocument,
     copyPartner,
     copyDepartment,
     copyEmployee,
@@ -223,10 +226,6 @@
       return !row || !row.status || row.status === "confirmed" || row.status === "amended" || row.status === "voidRequested";
     }
 
-    function isVoidedDocument(row) {
-      return row && (row.status === "voided" || row.status === "reversed");
-    }
-
     function createVoidInfo(options) {
       const now = new Date().toISOString();
       const reason = normalizeText(options && options.reason) || "未填寫作廢原因";
@@ -357,7 +356,8 @@
       mergeDocumentNos,
       normalizeDocumentStatus,
       transitionDocumentRows,
-      updateDocumentOwnerRows
+      updateDocumentOwnerRows,
+      nextDocumentNo
     });
     const transactionsModule = (global.ClaudeOpenStockFlowStoreTransactions || (typeof require !== "undefined" ? require("./inventoryStoreTransactions") : {}))
       .createTransactionsModule(txCtx);

@@ -395,6 +395,10 @@ function loadSaleDocs(items) {
   return items.map(copySaleDoc);
 }
 
+function isVoidedDocument(doc) {
+  return doc != null && (doc.status === "voided" || doc.status === "reversed");
+}
+
 function purchaseDocTotal(doc) {
   const lines = Array.isArray(doc && doc.lines) ? doc.lines : [];
   return lines.reduce((sum, l) => sum + l.quantity * l.unitCost, 0);
@@ -505,6 +509,7 @@ const inventoryModels = Object.assign(
     groupFlatPurchasesToDocs, groupFlatSalesToDocs,
     loadPurchaseDocs, loadSaleDocs,
     purchaseDocTotal, saleDocTotal,
+    isVoidedDocument,
     copyPurchase, copySale, copyAdjustment, copyTransfer, copyReturn,
     defaultPreferences, normalizePreferences,
     defaultWarehouse, ensureWarehouseOnRow,
@@ -533,6 +538,7 @@ export {
   groupFlatPurchasesToDocs, groupFlatSalesToDocs,
   loadPurchaseDocs, loadSaleDocs,
   purchaseDocTotal, saleDocTotal,
+  isVoidedDocument,
   copyPurchase, copySale, copyAdjustment, copyTransfer, copyReturn,
   defaultPreferences, normalizePreferences,
   defaultWarehouse, ensureWarehouseOnRow,

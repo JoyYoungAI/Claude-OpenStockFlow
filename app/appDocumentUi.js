@@ -40,7 +40,7 @@ function voidDetailPanel(item, type) {
   `;
 }
 
-function isVoidedDocument(item) { return item && (item.status === "voided" || item.status === "reversed"); }
+function isVoidedDocument(item) { return ClaudeOpenStockFlowModels.isVoidedDocument(item); }
 
 function returnMeta(item, documentType) {
   const quantity = returnedQuantity(item, documentType);
