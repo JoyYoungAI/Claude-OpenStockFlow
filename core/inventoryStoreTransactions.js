@@ -617,6 +617,96 @@
       return copyReturn(returnRow);
     }
 
+    function convertSaleLinesToLoan(input) {
+      const saleId = Number(input && input.saleId);
+      const rawLineIds = Array.isArray(input && input.lineIds) ? input.lineIds.map(Number) : [];
+      const loanWarehouseId = Number(input && input.loanWarehouseId);
+      const reason = normalizeText(input && input.reason) || "銷貨轉借貨";
+      const user = normalizeText(input && input.user);
+      const date = normalizeDate(input && input.date) || todayString();
+
+      const sourceDoc = findDocByLineId(getSales(), saleId);
+      if (!sourceDoc || !isDocumentEffective(sourceDoc)) return null;
+
+      const loanWarehouse = resolveActiveWarehouse(loanWarehouseId);
+      if (!loanWarehouse || loanWarehouse.type !== "loan") return null;
+      if (loanWarehouse.id === sourceDoc.warehouseId) return null;
+
+      const sourceLines = Array.isArray(sourceDoc.lines) ? sourceDoc.lines : [];
+      const targetLines = rawLineIds.length
+        ? sourceLines.filter((l) => rawLineIds.includes(l.lineId))
+        : sourceLines;
+      if (!targetLines.length) return null;
+
+      // Validate all lines before any mutation
+      const lineQtys = targetLines.map((line) => {
+        const returned = returnedQuantityForSource("salesReturn", line.lineId);
+        return { line, qty: line.quantity - returned };
+      });
+      if (lineQtys.some((lq) => lq.qty <= 0)) return { error: "NO_RETURNABLE_QUANTITY" };
+
+      // Create one return record per line, all sharing the same documentNo
+      const returnDocumentNo = nextDocumentNo("SRTN", date, getReturns());
+      const returnRows = [];
+      for (const { line, qty } of lineQtys) {
+        const returnRow = normalizeReturn({
+          documentType: "salesReturn",
+          documentNo: returnDocumentNo,
+          sourceDocumentNo: sourceDoc.documentNo,
+          sourceLineId: line.lineId,
+          productId: line.productId,
+          warehouseId: sourceDoc.warehouseId,
+          quantity: qty,
+          unitPrice: line.unitPrice,
+          costBasis: line.costBasis,
+          reason,
+          date,
+          inspectionStatus: "accepted",
+          createdBy: user,
+          confirmedBy: user,
+          relatedDocumentNos: [sourceDoc.documentNo],
+          status: "confirmed"
+        }, nextReturnId());
+        if (!returnRow) return null;
+        incNextReturnId();
+        returnRows.push(returnRow);
+      }
+      setReturns(returnRows.concat(getReturns()));
+      returnRows.forEach((r) => reduceReceivableForReturn(r));
+
+      // Transfer from source warehouse to loan warehouse (one record per product)
+      const transferDocumentNo = nextDocumentNo("TRF", date, getTransfers());
+      const transferRows = lineQtys.map(({ line, qty }) => {
+        const transfer = normalizeTransfer({
+          productId: line.productId,
+          fromWarehouseId: sourceDoc.warehouseId,
+          toWarehouseId: loanWarehouse.id,
+          quantity: qty,
+          date,
+          note: reason,
+          documentNo: transferDocumentNo
+        }, nextTransferId());
+        incNextTransferId();
+        return transfer;
+      }).filter(Boolean);
+      if (!transferRows.length) return null;
+      setTransfers(transferRows.concat(getTransfers()));
+
+      // Link both new documents to source sale
+      setSales(getSales().map((doc) => doc.id === sourceDoc.id
+        ? Object.assign({}, doc, {
+            relatedDocumentNos: mergeDocumentNos(doc.relatedDocumentNos, [returnDocumentNo, transferDocumentNo])
+          })
+        : doc
+      ));
+
+      return {
+        returnDocumentNo,
+        transferDocumentNo,
+        lines: lineQtys.map(({ line, qty }) => ({ lineId: line.lineId, productId: line.productId, quantity: qty }))
+      };
+    }
+
     function createVoidReversal(type, id, options) {
       const isPurchase = type === "purchase";
       const sourceDoc = isPurchase
@@ -887,7 +977,7 @@
     return {
       addPurchase, addPurchaseOrder, removePurchase, transitionPurchase, updatePurchaseOwner,
       addSale, addSaleOrder, removeSale, transitionSale, updateSaleOwner,
-      addSalesReturn, addPurchaseReturn, createVoidReversal, findVoidReversal,
+      addSalesReturn, addPurchaseReturn, convertSaleLinesToLoan, createVoidReversal, findVoidReversal,
       addStockAdjustment, addStockCount, addTransferOrder,
       listPurchases, listSales, listAdjustments, listTransfers, listReturns, listCostLayers
     };

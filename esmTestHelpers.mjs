@@ -328,7 +328,8 @@ function createTransactionsHarness(createTransactionsModule) {
     ],
     warehouses: [
       { id: 1, code: "MAIN", name: "Main Warehouse", type: "warehouse", note: "", active: true },
-      { id: 2, code: "BR", name: "Branch", type: "warehouse", note: "", active: true }
+      { id: 2, code: "BR", name: "Branch", type: "warehouse", note: "", active: true },
+      { id: 3, code: "LOAN", name: "Loan Out", type: "loan", note: "", active: true }
     ],
     purchases: [],
     sales: [],
@@ -651,6 +652,9 @@ function runTransactionsScenario(createTransactionsModule) {
   call("updateSaleOwner", () => api.updateSaleOwner(2, { ownerEmployeeId: 31, ownerDepartmentId: 41, lastEditedByEmployeeId: 32 }));
   call("addSalesReturn", () => api.addSalesReturn({ sourceLineId: 1, quantity: 1, reason: "Customer return", date: "2026-06-05", user: "Sales" }));
   call("addSalesReturn-too-many", () => api.addSalesReturn({ sourceLineId: 1, quantity: 99, reason: "Too many", date: "2026-06-05" }));
+  call("convertSaleLinesToLoan", () => api.convertSaleLinesToLoan({ saleId: 1, loanWarehouseId: 3, reason: "轉借貨", user: "Sales", date: "2026-06-05" }));
+  call("convertSaleLinesToLoan-already-done", () => api.convertSaleLinesToLoan({ saleId: 1, loanWarehouseId: 3, date: "2026-06-05" }));
+  call("convertSaleLinesToLoan-bad-warehouse", () => api.convertSaleLinesToLoan({ saleId: 1, loanWarehouseId: 1, date: "2026-06-05" }));
   call("addPurchaseReturn", () => api.addPurchaseReturn({ sourceLineId: 1, quantity: 2, reason: "Vendor return", date: "2026-06-06", user: "Buyer" }));
   call("addPurchaseReturn-too-many", () => api.addPurchaseReturn({ sourceLineId: 1, quantity: 99, reason: "Too many", date: "2026-06-06" }));
   call("addStockAdjustment", () => api.addStockAdjustment({ productId: 1, warehouseId: 1, quantity: 2, reason: "Found", date: "2026-06-07" }));

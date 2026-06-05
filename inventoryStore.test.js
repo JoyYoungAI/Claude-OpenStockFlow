@@ -396,6 +396,65 @@ assert.equal(juneReturnSummary.salesRevenue, -450);
 assert.equal(juneReturnSummary.purchaseCost, -500);
 assert.equal(juneReturnSummary.grossProfit, -200);
 
+// ── convertSaleLinesToLoan ────────────────────────────────────────────────────
+const loanStore = createInventoryStore({
+  products: [
+    { id: 1, sku: "P001", name: "Widget", category: "Parts", unit: "pc", cost: 100, price: 200, safetyStock: 2, active: true },
+    { id: 2, sku: "P002", name: "Gadget", category: "Parts", unit: "pc", cost: 80, price: 150, safetyStock: 1, active: true }
+  ],
+  warehouses: [
+    { id: 1, code: "MAIN", name: "Main", type: "warehouse", note: "", active: true },
+    { id: 2, code: "LOAN", name: "Loan Out", type: "loan", note: "", active: true }
+  ],
+  purchases: [],
+  sales: []
+});
+// Stock in
+loanStore.addPurchaseOrder({ supplier: "Supplier", date: "2026-06-01", items: [{ productId: 1, quantity: 10, unitCost: 100 }, { productId: 2, quantity: 5, unitCost: 80 }] });
+// Sale: 3 Widget + 2 Gadget
+const loanSale = loanStore.addSaleOrder({
+  customer: "Customer A",
+  date: "2026-06-02",
+  warehouseId: 1,
+  createReceivable: true,
+  items: [{ productId: 1, quantity: 3, unitPrice: 200 }, { productId: 2, quantity: 2, unitPrice: 150 }]
+});
+assert.equal(loanStore.inventoryReport().find((r) => r.productId === 1 && r.warehouseId === 1).onHand, 7);
+assert.equal(loanStore.inventoryReport().find((r) => r.productId === 2 && r.warehouseId === 1).onHand, 3);
+assert.equal(loanStore.listReceivables().length, 1);
+
+// Convert the Widget line (lineId = loanSale.id, which is first line) to loan
+const loanLine1Id = loanSale.lines[0].lineId;
+const loanResult = loanStore.convertSaleLinesToLoan({
+  saleId: loanSale.id,
+  lineIds: [loanLine1Id],
+  loanWarehouseId: 2,
+  reason: "客戶A轉借給客戶B",
+  user: "Sales",
+  date: "2026-06-03"
+});
+assert.ok(loanResult && !loanResult.error, "convertSaleLinesToLoan should succeed");
+assert.equal(loanResult.lines.length, 1, "one line converted");
+assert.equal(loanResult.lines[0].quantity, 3, "full Widget qty converted");
+// Stock: Widget back to main then moved to loan
+assert.equal(loanStore.inventoryReport().find((r) => r.productId === 1 && r.warehouseId === 1).onHand, 7, "Widget back to main via return");
+assert.equal((loanStore.inventoryReport().find((r) => r.productId === 1 && r.warehouseId === 2) || {}).onHand, 3, "Widget in loan warehouse");
+// Gadget untouched
+assert.equal(loanStore.inventoryReport().find((r) => r.productId === 2 && r.warehouseId === 1).onHand, 3);
+// AR reduced by Widget portion (3 * 200 = 600)
+assert.equal(loanStore.listReceivables()[0].amount, 300, "AR reduced from 900 to 300");
+// Source sale has both return and transfer doc in relatedDocumentNos
+const updatedSale = loanStore.listSales({ includeVoided: false }).find((d) => d.id === loanSale.id);
+assert.ok(updatedSale.relatedDocumentNos.includes(loanResult.returnDocumentNo), "sale links return");
+assert.ok(updatedSale.relatedDocumentNos.includes(loanResult.transferDocumentNo), "sale links transfer");
+// Returns list contains the new salesReturn
+assert.ok(loanStore.listReturns({ documentType: "salesReturn" }).some((r) => r.documentNo === loanResult.returnDocumentNo), "return recorded");
+// Transfers list contains the new transfer
+assert.ok(loanStore.listTransfers({}).some((t) => t.documentNo === loanResult.transferDocumentNo), "transfer recorded");
+// Error cases
+assert.equal(loanStore.convertSaleLinesToLoan({ saleId: loanSale.id, lineIds: [loanLine1Id], loanWarehouseId: 2, date: "2026-06-04" }).error, "NO_RETURNABLE_QUANTITY", "already converted");
+assert.equal(loanStore.convertSaleLinesToLoan({ saleId: loanSale.id, loanWarehouseId: 1, date: "2026-06-04" }), null, "wrong warehouse type");
+
 const costingStore = createInventoryStore({
   products: [
     { id: 1, sku: "A001", name: "Coffee Beans", category: "Food", unit: "bag", cost: 100, price: 220, safetyStock: 5, active: true }
