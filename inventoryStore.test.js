@@ -607,7 +607,7 @@ const models = require("./core/inventoryModels");
 ["normalizePurchase", "copyPurchase", "normalizeSale", "normalizeReturn", "normalizeDocumentStatus", "defaultPreferences"].forEach((fn) => {
   assert.equal(typeof models[fn], "function", `transaction/shared model export missing: ${fn}`);
 });
-["purchaseDocTotal", "saleDocTotal", "isVoidedDocument"].forEach((fn) => {
+["purchaseDocTotal", "saleDocTotal", "isVoidedDocument", "returnableQuantity", "docReturnStatus"].forEach((fn) => {
   assert.equal(typeof models[fn], "function", `document helper missing: ${fn}`);
 });
 assert.equal(typeof models.remainingBalance, "function", "finance model export missing: remainingBalance");
@@ -632,6 +632,40 @@ assert.equal(models.remainingBalance({ amount: 1000, paidAmount: 400 }), 600, "r
 assert.equal(models.remainingBalance({ amount: 500, paidAmount: 500 }), 0, "remainingBalance: fully paid");
 assert.equal(models.remainingBalance({ amount: 200, paidAmount: 0 }), 200, "remainingBalance: unpaid");
 assert.equal(models.remainingBalance(null), 0, "remainingBalance: null-safe");
+
+// ── returnableQuantity ────────────────────────────────────────────────────────
+const rqLine = { lineId: 10, quantity: 5 };
+const rqReturns = [
+  { sourceLineId: 10, quantity: 2 },
+  { sourceLineId: 10, quantity: 1 }
+];
+assert.equal(models.returnableQuantity(rqLine, rqReturns), 2, "returnableQuantity: 5-2-1=2");
+assert.equal(models.returnableQuantity(rqLine, []), 5, "returnableQuantity: no returns");
+assert.equal(models.returnableQuantity(rqLine, [{ sourceLineId: 10, quantity: 5 }]), 0, "returnableQuantity: fully returned");
+assert.equal(models.returnableQuantity(null, []), 0, "returnableQuantity: null-safe");
+
+// ── docReturnStatus ───────────────────────────────────────────────────────────
+const drsDoc = { lines: [{ lineId: 1, quantity: 3 }, { lineId: 2, quantity: 4 }] };
+const drsReturnsNone = [];
+const drsReturnsPartial = [{ sourceLineId: 1, quantity: 2 }];
+const drsReturnsFull = [{ sourceLineId: 1, quantity: 3 }, { sourceLineId: 2, quantity: 4 }];
+assert.equal(models.docReturnStatus(drsDoc, drsReturnsNone).status, "none", "docReturnStatus: none");
+assert.equal(models.docReturnStatus(drsDoc, drsReturnsPartial).status, "partial", "docReturnStatus: partial");
+assert.equal(models.docReturnStatus(drsDoc, drsReturnsFull).status, "full", "docReturnStatus: full");
+assert.equal(models.docReturnStatus(drsDoc, drsReturnsPartial).remaining, 5, "docReturnStatus: remaining=5");
+assert.equal(models.docReturnStatus(drsDoc, drsReturnsPartial).totalReturned, 2, "docReturnStatus: totalReturned=2");
+assert.equal(models.docReturnStatus(null, []).status, "none", "docReturnStatus: null-safe");
+
+// ── ③ salesReturn/purchaseReturn writes back to source doc relatedDocumentNos ─
+{
+  const saleDocs = returnStore.listSales({ includeVoided: false });
+  const saleDoc = saleDocs.find((d) => d.lines.some((l) => l.lineId === 1));
+  assert.ok(Array.isArray(saleDoc.relatedDocumentNos), "sale relatedDocumentNos is array");
+  assert.ok(saleDoc.relatedDocumentNos.includes("SRTN-202606-001"), "sale relatedDocumentNos includes return doc");
+  const purchaseDocs = returnStore.listPurchases({ includeVoided: false });
+  const purchaseDoc = purchaseDocs.find((d) => d.lines.some((l) => l.lineId === 1));
+  assert.ok(purchaseDoc.relatedDocumentNos.includes("PRTN-202606-001"), "purchase relatedDocumentNos includes return doc");
+}
 
 console.log("All tests passed.");
 

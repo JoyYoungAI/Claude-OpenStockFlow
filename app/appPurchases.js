@@ -105,8 +105,8 @@ function renderPurchases() {
       const lines = doc.lines || [];
       const linesTotal = ClaudeOpenStockFlowModels.purchaseDocTotal(doc);
       const linesHtml = lines.map((line) => {
-        const returned = allReturns.filter((r) => r.sourceLineId === line.lineId).reduce((s, r) => s + r.quantity, 0);
-        const remaining = line.quantity - returned;
+        const remaining = ClaudeOpenStockFlowModels.returnableQuantity(line, allReturns);
+        const returned = line.quantity - remaining;
         const canReturn = !isVoidedDocument(doc) && ["confirmed", "amended", "voidRequested"].includes(doc.status || "confirmed") && canPerform("createPurchaseReturn", { targetDocument: doc });
         const returnBtn = canReturn && remaining > 0
           ? `<button class="text-button" type="button" data-return-purchase-id="${line.lineId}" title="${escapeAttr(t("tooltips.purchaseReturn", "建立進貨退貨，會扣回庫存並調整應付。"))}">${t("actions.createReturn", "退貨")}</button>`

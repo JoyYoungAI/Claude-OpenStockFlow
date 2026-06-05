@@ -499,6 +499,35 @@
     return lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
   }
 
+  // ── Return quantity helpers ──────────────────────────────────────────────────
+
+  function returnableQuantity(line, allReturns) {
+    const returns = Array.isArray(allReturns) ? allReturns : [];
+    const returned = returns
+      .filter((r) => r.sourceLineId === (line && line.lineId))
+      .reduce((s, r) => s + r.quantity, 0);
+    return Math.max(0, (line && line.quantity || 0) - returned);
+  }
+
+  function docReturnStatus(doc, allReturns) {
+    const lines = Array.isArray(doc && doc.lines) ? doc.lines : [];
+    const returns = Array.isArray(allReturns) ? allReturns : [];
+    let totalQuantity = 0, totalReturned = 0;
+    lines.forEach((line) => {
+      totalQuantity += line.quantity || 0;
+      totalReturned += returns
+        .filter((r) => r.sourceLineId === line.lineId)
+        .reduce((s, r) => s + r.quantity, 0);
+    });
+    const remaining = Math.max(0, totalQuantity - totalReturned);
+    return {
+      totalQuantity,
+      totalReturned,
+      remaining,
+      status: totalReturned === 0 ? "none" : remaining === 0 ? "full" : "partial"
+    };
+  }
+
   // ── Combined export ───────────────────────────────────────────────────────────
 
   const api = Object.assign(
@@ -513,6 +542,7 @@
       loadPurchaseDocs, loadSaleDocs,
       groupFlatPurchasesToDocs, groupFlatSalesToDocs,
       purchaseDocTotal, saleDocTotal,
+      returnableQuantity, docReturnStatus,
       isVoidedDocument,
       defaultPreferences, normalizePreferences,
       defaultWarehouse, ensureWarehouseOnRow,

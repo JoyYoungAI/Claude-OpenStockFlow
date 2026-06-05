@@ -409,6 +409,33 @@ function saleDocTotal(doc) {
   return lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
 }
 
+function returnableQuantity(line, allReturns) {
+  const returns = Array.isArray(allReturns) ? allReturns : [];
+  const returned = returns
+    .filter((r) => r.sourceLineId === (line && line.lineId))
+    .reduce((s, r) => s + r.quantity, 0);
+  return Math.max(0, (line && line.quantity || 0) - returned);
+}
+
+function docReturnStatus(doc, allReturns) {
+  const lines = Array.isArray(doc && doc.lines) ? doc.lines : [];
+  const returns = Array.isArray(allReturns) ? allReturns : [];
+  let totalQuantity = 0, totalReturned = 0;
+  lines.forEach((line) => {
+    totalQuantity += line.quantity || 0;
+    totalReturned += returns
+      .filter((r) => r.sourceLineId === line.lineId)
+      .reduce((s, r) => s + r.quantity, 0);
+  });
+  const remaining = Math.max(0, totalQuantity - totalReturned);
+  return {
+    totalQuantity,
+    totalReturned,
+    remaining,
+    status: totalReturned === 0 ? "none" : remaining === 0 ? "full" : "partial"
+  };
+}
+
 function copyPurchase(item) {
   if (item && Array.isArray(item.lines)) { return copyPurchaseDoc(item); }
   return flatPurchaseToDoc(item);
@@ -509,6 +536,7 @@ const inventoryModels = Object.assign(
     groupFlatPurchasesToDocs, groupFlatSalesToDocs,
     loadPurchaseDocs, loadSaleDocs,
     purchaseDocTotal, saleDocTotal,
+    returnableQuantity, docReturnStatus,
     isVoidedDocument,
     copyPurchase, copySale, copyAdjustment, copyTransfer, copyReturn,
     defaultPreferences, normalizePreferences,
@@ -538,6 +566,7 @@ export {
   groupFlatPurchasesToDocs, groupFlatSalesToDocs,
   loadPurchaseDocs, loadSaleDocs,
   purchaseDocTotal, saleDocTotal,
+  returnableQuantity, docReturnStatus,
   isVoidedDocument,
   copyPurchase, copySale, copyAdjustment, copyTransfer, copyReturn,
   defaultPreferences, normalizePreferences,

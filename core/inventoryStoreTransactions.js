@@ -564,6 +564,10 @@
       if (!returnRow) return null;
       incNextReturnId();
       setReturns([returnRow].concat(getReturns()));
+      setSales(getSales().map((doc) => doc.id === sourceDoc.id
+        ? Object.assign({}, doc, { relatedDocumentNos: mergeDocumentNos(doc.relatedDocumentNos, [returnRow.documentNo]) })
+        : doc
+      ));
       reduceReceivableForReturn(returnRow);
       return copyReturn(returnRow);
     }
@@ -605,6 +609,10 @@
       if (!returnRow) return null;
       incNextReturnId();
       setReturns([returnRow].concat(getReturns()));
+      setPurchases(getPurchases().map((doc) => doc.id === sourceDoc.id
+        ? Object.assign({}, doc, { relatedDocumentNos: mergeDocumentNos(doc.relatedDocumentNos, [returnRow.documentNo]) })
+        : doc
+      ));
       reducePayableForReturn(returnRow);
       return copyReturn(returnRow);
     }
