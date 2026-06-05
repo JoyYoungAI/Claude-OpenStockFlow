@@ -1,5 +1,5 @@
 (function (global) {
-  const utils = global.OpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
+  const utils = global.ClaudeOpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
   const { normalizeText, positiveNumber, nonNegativeNumber, normalizeDate } = utils;
 
   function normalizeDepartmentType(type) {
@@ -150,6 +150,6 @@
     normalizeDepartmentType, normalizeEmployeeRole
   };
 
-  global.OpenStockFlowModelsMaster = api;
+  global.ClaudeOpenStockFlowModelsMaster = api;
   if (typeof module !== "undefined") { module.exports = api; }
 })(typeof window !== "undefined" ? window : globalThis);

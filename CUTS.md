@@ -1,4 +1,4 @@
-# OpenStockFlow Cuts
+# Claude-OpenStockFlow Cuts
 
 Purpose: keep the next work items small, named, and easy to hand off.
 

@@ -82,7 +82,7 @@ const seedState = {
   preferences: {
     locale: "zh-Hant-TW", interfaceLanguage: "zh-Hant", quantityDecimals: 0, moneyDecimals: 0,
     thousandsSeparator: ",", decimalSeparator: ".", currencyCode: "TWD", currencySymbol: "$",
-    currencyPosition: "prefix", reportTitle: "OpenStockFlow 營運報表", reportHeaderText: "OpenStockFlow",
+    currencyPosition: "prefix", reportTitle: "Claude-OpenStockFlow 營運報表", reportHeaderText: "Claude-OpenStockFlow",
     reportFooterText: "", showPrintDate: true, dateFormat: "YYYY-MM-DD"
   }
 };

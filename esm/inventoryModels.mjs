@@ -446,7 +446,7 @@ function copyReturn(returnRow) {
 }
 
 function defaultPreferences() {
-  return { locale: "zh-Hant-TW", interfaceLanguage: "zh-Hant", quantityDecimals: 0, moneyDecimals: 0, thousandsSeparator: ",", decimalSeparator: ".", currencyCode: "TWD", currencySymbol: "$", currencyPosition: "prefix", reportTitle: "OpenStockFlow 營運報表", reportHeaderText: "OpenStockFlow", reportFooterText: "", showPrintDate: true, dateFormat: "YYYY-MM-DD" };
+  return { locale: "zh-Hant-TW", interfaceLanguage: "zh-Hant", quantityDecimals: 0, moneyDecimals: 0, thousandsSeparator: ",", decimalSeparator: ".", currencyCode: "TWD", currencySymbol: "$", currencyPosition: "prefix", reportTitle: "Claude-OpenStockFlow 營運報表", reportHeaderText: "Claude-OpenStockFlow", reportFooterText: "", showPrintDate: true, dateFormat: "YYYY-MM-DD" };
 }
 
 function normalizePreferences(input) {

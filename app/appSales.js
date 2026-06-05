@@ -19,8 +19,8 @@ function bindSaleHandlers() {
       note: data.note,
       items: collectOrderItems(data, "unitPrice")
     });
-    if (!sale) { setStatus(OpenStockFlowMessages.message("saleOrderFailed"), true); return; }
-    if (sale.error === "INSUFFICIENT_STOCK") { setStatus(OpenStockFlowMessages.transactionError(sale, "saleOrderFailed"), true); return; }
+    if (!sale) { setStatus(ClaudeOpenStockFlowMessages.message("saleOrderFailed"), true); return; }
+    if (sale.error === "INSUFFICIENT_STOCK") { setStatus(ClaudeOpenStockFlowMessages.transactionError(sale, "saleOrderFailed"), true); return; }
     recordAudit("create", {
       entityType: "sale", documentNo: sale.documentNo,
       relatedDocumentNos: [sale.documentNo],

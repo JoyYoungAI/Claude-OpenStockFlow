@@ -1,4 +1,4 @@
-# OpenStockFlow Layout
+# Claude-OpenStockFlow Layout
 
 Updated: 2026-06-04
 

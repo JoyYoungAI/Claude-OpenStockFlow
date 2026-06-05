@@ -18,7 +18,7 @@
       nextWarehouseId, incNextWarehouseId
     } = ctx;
 
-    const models = global.OpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
+    const models = global.ClaudeOpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
     const {
       normalizeProductCategory, copyProductCategory, sameCategory,
       normalizeWarehouse, copyWarehouse, sameWarehouse,
@@ -38,7 +38,7 @@
     }
 
     function normalizeProduct(input, id) {
-      const utils = global.OpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
+      const utils = global.ClaudeOpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
       const { nonNegativeNumber } = utils;
       const sku = normalizeText(input && input.sku).toUpperCase();
       const name = normalizeText(input && input.name);
@@ -57,7 +57,7 @@
     }
 
     function copyProduct(product) {
-      const utils = global.OpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
+      const utils = global.ClaudeOpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
       const { nonNegativeNumber } = utils;
       return {
         id: Number(product.id),
@@ -240,7 +240,7 @@
     }
 
     function listProducts(options) {
-      const utils = global.OpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
+      const utils = global.ClaudeOpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
       const { normalizeText: nt } = utils;
       const filter = Object.assign({ query: "", category: "", activeOnly: false }, options);
       const query = (nt || normalizeText)(filter.query).toLowerCase();
@@ -387,9 +387,9 @@
     };
   }
 
-  global.OpenStockFlowStoreMaster = { createMasterModule };
+  global.ClaudeOpenStockFlowStoreMaster = { createMasterModule };
 
   if (typeof module !== "undefined") {
-    module.exports = global.OpenStockFlowStoreMaster;
+    module.exports = global.ClaudeOpenStockFlowStoreMaster;
   }
 })(typeof window !== "undefined" ? window : globalThis);

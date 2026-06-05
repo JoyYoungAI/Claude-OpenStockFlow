@@ -70,7 +70,7 @@
     nextDocumentNo
   };
 
-  global.OpenStockFlowUtils = api;
+  global.ClaudeOpenStockFlowUtils = api;
 
   if (typeof module !== "undefined") {
     module.exports = api;

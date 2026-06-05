@@ -1,5 +1,5 @@
 (function (global) {
-  const utils = global.OpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
+  const utils = global.ClaudeOpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
   const { normalizeText, positiveNumber, nonNegativeNumber, normalizeDate } = utils;
 
   function normalizeDocumentNoList(value) {
@@ -99,6 +99,6 @@
     normalizePayment, copyPayment
   };
 
-  global.OpenStockFlowModelsFinance = api;
+  global.ClaudeOpenStockFlowModelsFinance = api;
   if (typeof module !== "undefined") { module.exports = api; }
 })(typeof window !== "undefined" ? window : globalThis);

@@ -142,7 +142,7 @@ function renderOverview() {
 }
 
 function renderReports() {
-  OpenStockFlowRenderers.renderReports({
+  ClaudeOpenStockFlowRenderers.renderReports({
     document, store, month: reportMonth.value, movementQuery: movementQuery.value,
     formatMoney, formatNumber, formatQuantity, formatCount, formatDate, formatPercent,
     escapeHtml, t, productName, warehouseName, movementBadge, canViewField, restrictedText

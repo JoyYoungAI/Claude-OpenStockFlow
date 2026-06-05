@@ -1,6 +1,6 @@
 (function (global) {
-  const models = global.OpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
-  const reports = global.OpenStockFlowReports || (typeof require !== "undefined" ? require("./inventoryReports") : {});
+  const models = global.ClaudeOpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
+  const reports = global.ClaudeOpenStockFlowReports || (typeof require !== "undefined" ? require("./inventoryReports") : {});
   const {
     copyPartner,
     copyDepartment,
@@ -95,7 +95,7 @@
 
     // ── Helper: local copyProduct ────────────────────────────────────────────
     function copyProductLocal(product) {
-      const { nonNegativeNumber } = global.OpenStockFlowUtils || {};
+      const { nonNegativeNumber } = global.ClaudeOpenStockFlowUtils || {};
       const nnn = nonNegativeNumber || function (v) {
         const n = Number(v);
         return Number.isFinite(n) && n >= 0 ? n : null;
@@ -324,14 +324,14 @@
     }
 
     // ── Initialise sub-modules ───────────────────────────────────────────────
-    const financeModule = (global.OpenStockFlowStoreFinance || (typeof require !== "undefined" ? require("./inventoryStoreFinance") : {}))
+    const financeModule = (global.ClaudeOpenStockFlowStoreFinance || (typeof require !== "undefined" ? require("./inventoryStoreFinance") : {}))
       .createFinanceModule(ctx);
 
     const masterCtx = Object.assign({}, ctx, {
       findProduct,
       setProductsCost
     });
-    const masterModule = (global.OpenStockFlowStoreMaster || (typeof require !== "undefined" ? require("./inventoryStoreMaster") : {}))
+    const masterModule = (global.ClaudeOpenStockFlowStoreMaster || (typeof require !== "undefined" ? require("./inventoryStoreMaster") : {}))
       .createMasterModule(masterCtx);
 
     const txCtx = Object.assign({}, ctx, {
@@ -359,7 +359,7 @@
       transitionDocumentRows,
       updateDocumentOwnerRows
     });
-    const transactionsModule = (global.OpenStockFlowStoreTransactions || (typeof require !== "undefined" ? require("./inventoryStoreTransactions") : {}))
+    const transactionsModule = (global.ClaudeOpenStockFlowStoreTransactions || (typeof require !== "undefined" ? require("./inventoryStoreTransactions") : {}))
       .createTransactionsModule(txCtx);
 
     // ── Remaining store-level functions ──────────────────────────────────────

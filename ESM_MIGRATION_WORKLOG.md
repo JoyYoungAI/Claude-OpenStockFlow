@@ -1,4 +1,4 @@
-# OpenStockFlow ESM Migration Worklog
+# Claude-OpenStockFlow ESM Migration Worklog
 
 Authors: Codex. Historical notes mention prior Claude read-only reviews; the Claude hook was retired on 2026-06-04.
 
@@ -91,7 +91,7 @@ Authors: Codex. Historical notes mention prior Claude read-only reviews; the Cla
 - Checks run after `V2`: loader file existence check (`28` files, `0` missing); `node --check` for all `28` runtime JS files under `app/`, `core/`, `services/`, and `ui/`; `node --check inventoryStore.test.js`; `node --check esmTestHelpers.mjs`; `node inventoryEsm.test.mjs`; `node inventoryStore.test.js`.
 - Completed `V4` browser smoke verification with `browserSmokeCheck.mjs`.
 - Headless Edge still could not expose a stable DevTools WebSocket in this local Windows environment, but visible Edge with a temporary profile and DevTools port `9888` succeeded.
-- Browser smoke result: `ok: true`; page title `OpenStockFlow 進銷存系統`; ready state `complete`; `28` loader scripts; last script `./app/app.js?v=1.17.2`; app version `v1.17.2`; overview tab active; metric products `3`; required globals present; bad console/runtime event count `0`.
+- Browser smoke result: `ok: true`; page title `Claude-OpenStockFlow 進銷存系統`; ready state `complete`; `28` loader scripts; last script `./app/app.js?v=1.17.2`; app version `v1.17.2`; overview tab active; metric products `3`; required globals present; bad console/runtime event count `0`.
 
 ## Dependency Graph Draft
 

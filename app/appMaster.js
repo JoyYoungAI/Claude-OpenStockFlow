@@ -8,8 +8,8 @@ function bindMasterHandlers() {
     const wasEditing = Boolean(editingProductId);
     data.categoryId = data.category;
     const product = wasEditing ? store.updateProduct(editingProductId, data) : store.addProduct(data);
-    if (!product) { setStatus(OpenStockFlowMessages.message("productSaveFailed"), true); return; }
-    if (product.error === "DUPLICATE_SKU") { setStatus(OpenStockFlowMessages.message("duplicateSku"), true); return; }
+    if (!product) { setStatus(ClaudeOpenStockFlowMessages.message("productSaveFailed"), true); return; }
+    if (product.error === "DUPLICATE_SKU") { setStatus(ClaudeOpenStockFlowMessages.message("duplicateSku"), true); return; }
     recordAudit(wasEditing ? "update" : "create", {
       entityType: "product", entityId: product.id,
       summary: `${wasEditing ? "更新" : "新增"}商品：${product.name}`,
@@ -35,8 +35,8 @@ function bindMasterHandlers() {
     const data = Object.fromEntries(new FormData(partnerForm));
     const wasEditing = Boolean(editingPartnerId);
     const partner = wasEditing ? store.updatePartner(editingPartnerId, data) : store.addPartner(data);
-    if (!partner) { setStatus(OpenStockFlowMessages.message("partnerSaveFailed"), true); return; }
-    if (partner.error === "DUPLICATE_PARTNER") { setStatus(OpenStockFlowMessages.message("duplicatePartner"), true); return; }
+    if (!partner) { setStatus(ClaudeOpenStockFlowMessages.message("partnerSaveFailed"), true); return; }
+    if (partner.error === "DUPLICATE_PARTNER") { setStatus(ClaudeOpenStockFlowMessages.message("duplicatePartner"), true); return; }
     recordAudit(wasEditing ? "update" : "create", {
       entityType: "partner", entityId: partner.id,
       summary: `${wasEditing ? "更新" : "新增"}往來對象：${partner.name}`,
@@ -59,7 +59,7 @@ function bindMasterHandlers() {
     event.preventDefault();
     if (!requireAction("manageMasterData")) { return; }
     const category = store.addProductCategory(Object.fromEntries(new FormData(categoryForm)));
-    if (!category) { setStatus(OpenStockFlowMessages.message("categorySaveFailed"), true); return; }
+    if (!category) { setStatus(ClaudeOpenStockFlowMessages.message("categorySaveFailed"), true); return; }
     recordAudit("create", {
       entityType: "productCategory", entityId: category.id,
       summary: `新增分類：${category.name}`,
@@ -76,7 +76,7 @@ function bindMasterHandlers() {
     event.preventDefault();
     if (!requireAction("manageMasterData")) { return; }
     const warehouse = store.addWarehouse(Object.fromEntries(new FormData(warehouseForm)));
-    if (!warehouse) { setStatus(OpenStockFlowMessages.message("warehouseSaveFailed"), true); return; }
+    if (!warehouse) { setStatus(ClaudeOpenStockFlowMessages.message("warehouseSaveFailed"), true); return; }
     recordAudit("create", {
       entityType: "warehouse", entityId: warehouse.id,
       summary: `新增倉庫：${warehouse.name}`,

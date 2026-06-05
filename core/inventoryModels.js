@@ -1,9 +1,9 @@
 (function (global) {
-  const utils = global.OpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
+  const utils = global.ClaudeOpenStockFlowUtils || (typeof require !== "undefined" ? require("./inventoryUtils") : {});
   const { normalizeText, positiveNumber, nonNegativeNumber, normalizeDate } = utils;
 
-  const master = global.OpenStockFlowModelsMaster || (typeof require !== "undefined" ? require("./inventoryModelsMaster") : {});
-  const finance = global.OpenStockFlowModelsFinance || (typeof require !== "undefined" ? require("./inventoryModelsFinance") : {});
+  const master = global.ClaudeOpenStockFlowModelsMaster || (typeof require !== "undefined" ? require("./inventoryModelsMaster") : {});
+  const finance = global.ClaudeOpenStockFlowModelsFinance || (typeof require !== "undefined" ? require("./inventoryModelsFinance") : {});
 
   // ── Shared document utilities ────────────────────────────────────────────────
 
@@ -445,7 +445,7 @@
   // ── Preferences ──────────────────────────────────────────────────────────────
 
   function defaultPreferences() {
-    return { locale: "zh-Hant-TW", interfaceLanguage: "zh-Hant", quantityDecimals: 0, moneyDecimals: 0, thousandsSeparator: ",", decimalSeparator: ".", currencyCode: "TWD", currencySymbol: "$", currencyPosition: "prefix", reportTitle: "OpenStockFlow 營運報表", reportHeaderText: "OpenStockFlow", reportFooterText: "", showPrintDate: true, dateFormat: "YYYY-MM-DD" };
+    return { locale: "zh-Hant-TW", interfaceLanguage: "zh-Hant", quantityDecimals: 0, moneyDecimals: 0, thousandsSeparator: ",", decimalSeparator: ".", currencyCode: "TWD", currencySymbol: "$", currencyPosition: "prefix", reportTitle: "Claude-OpenStockFlow 營運報表", reportHeaderText: "Claude-OpenStockFlow", reportFooterText: "", showPrintDate: true, dateFormat: "YYYY-MM-DD" };
   }
 
   function normalizePreferences(input) {
@@ -500,6 +500,6 @@
     }
   );
 
-  global.OpenStockFlowModels = api;
+  global.ClaudeOpenStockFlowModels = api;
   if (typeof module !== "undefined") { module.exports = api; }
 })(typeof window !== "undefined" ? window : globalThis);

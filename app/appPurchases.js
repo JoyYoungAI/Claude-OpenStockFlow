@@ -19,7 +19,7 @@ function bindPurchaseHandlers() {
       note: data.note,
       items: collectOrderItems(data, "unitCost")
     });
-    if (!purchase) { setStatus(OpenStockFlowMessages.transactionError(purchase, "purchaseOrderFailed"), true); return; }
+    if (!purchase) { setStatus(ClaudeOpenStockFlowMessages.transactionError(purchase, "purchaseOrderFailed"), true); return; }
     recordAudit("create", {
       entityType: "purchase", documentNo: purchase.documentNo,
       relatedDocumentNos: [purchase.documentNo],
@@ -55,7 +55,7 @@ function bindPurchaseHandlers() {
     const reason = prompt(t("prompts.voidReason", "請填寫作廢原因，系統會保留原始單據紀錄。"));
     if (!String(reason || "").trim()) { setStatus(t("messages.voidReasonRequired", "作廢需要填寫原因，已取消。"), true); return; }
     const result = store.removePurchase(Number(button.dataset.removePurchaseId), { reason, user: currentUser.name });
-    if (result && result.error === "NEGATIVE_STOCK") { setStatus(OpenStockFlowMessages.transactionError(result, "negativeStockOnRemove"), true); return; }
+    if (result && result.error === "NEGATIVE_STOCK") { setStatus(ClaudeOpenStockFlowMessages.transactionError(result, "negativeStockOnRemove"), true); return; }
     if (result) {
       recordAudit("delete", {
         entityType: "purchase", entityId: button.dataset.removePurchaseId,

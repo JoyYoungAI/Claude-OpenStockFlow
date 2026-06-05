@@ -1,6 +1,6 @@
 function applyTextBaseline() {
   document.documentElement.lang = currentLanguage();
-  document.title = t("app.title", "OpenStockFlow 進銷存系統");
+  document.title = t("app.title", "Claude-OpenStockFlow 進銷存系統");
   const headingText = t("app.heading", "進銷存系統");
   const heading = document.querySelector(".app-header h1");
   const versionBadge = document.querySelector("#app-version");

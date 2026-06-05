@@ -9,7 +9,7 @@
       nextPaymentId, incNextPaymentId
     } = ctx;
 
-    const models = global.OpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
+    const models = global.ClaudeOpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
     const {
       normalizeReceivable, copyReceivable,
       normalizePayable, copyPayable,
@@ -261,9 +261,9 @@
     };
   }
 
-  global.OpenStockFlowStoreFinance = { createFinanceModule };
+  global.ClaudeOpenStockFlowStoreFinance = { createFinanceModule };
 
   if (typeof module !== "undefined") {
-    module.exports = global.OpenStockFlowStoreFinance;
+    module.exports = global.ClaudeOpenStockFlowStoreFinance;
   }
 })(typeof window !== "undefined" ? window : globalThis);

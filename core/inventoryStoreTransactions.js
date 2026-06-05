@@ -39,7 +39,7 @@
       updateDocumentOwnerRows
     } = ctx;
 
-    const models = global.OpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
+    const models = global.ClaudeOpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
     const {
       normalizePurchase,
       normalizeSale,
@@ -896,9 +896,9 @@
     };
   }
 
-  global.OpenStockFlowStoreTransactions = { createTransactionsModule };
+  global.ClaudeOpenStockFlowStoreTransactions = { createTransactionsModule };
 
   if (typeof module !== "undefined") {
-    module.exports = global.OpenStockFlowStoreTransactions;
+    module.exports = global.ClaudeOpenStockFlowStoreTransactions;
   }
 })(typeof window !== "undefined" ? window : globalThis);

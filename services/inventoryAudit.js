@@ -103,7 +103,7 @@
     auditRiskLabel
   };
 
-  global.OpenStockFlowAudit = api;
+  global.ClaudeOpenStockFlowAudit = api;
 
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;

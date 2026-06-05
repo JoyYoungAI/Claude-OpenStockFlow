@@ -144,8 +144,8 @@ try {
       metricProducts: document.querySelector("#metric-products") ? document.querySelector("#metric-products").textContent : null,
       globals: {
         createInventoryStore: typeof window.createInventoryStore,
-        OpenStockFlowModels: typeof window.OpenStockFlowModels,
-        OpenStockFlowStorage: typeof window.OpenStockFlowStorage,
+        ClaudeOpenStockFlowModels: typeof window.ClaudeOpenStockFlowModels,
+        ClaudeOpenStockFlowStorage: typeof window.ClaudeOpenStockFlowStorage,
         formatMoney: typeof window.formatMoney,
         applyTextBaseline: typeof window.applyTextBaseline,
         documentStatusBadge: typeof window.documentStatusBadge,

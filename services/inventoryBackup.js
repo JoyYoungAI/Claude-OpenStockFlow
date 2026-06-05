@@ -66,7 +66,7 @@
   }
 
   const api = { createInventoryBackup };
-  global.OpenStockFlowBackup = api;
+  global.ClaudeOpenStockFlowBackup = api;
 
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;

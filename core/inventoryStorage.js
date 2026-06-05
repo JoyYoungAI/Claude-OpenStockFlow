@@ -116,7 +116,7 @@
 
     function validateBackupEnvelope(backup) {
       if (!backup || (!backup.state && !Array.isArray(backup.products))) {
-        return { valid: false, message: "這不是 OpenStockFlow 備份檔。" };
+        return { valid: false, message: "這不是 Claude-OpenStockFlow 備份檔。" };
       }
 
       const migrated = migrateState(backup);
@@ -434,11 +434,11 @@
     };
   }
 
-  global.OpenStockFlowStorage = {
+  global.ClaudeOpenStockFlowStorage = {
     createInventoryStorage
   };
 
   if (typeof module !== "undefined") {
-    module.exports = global.OpenStockFlowStorage;
+    module.exports = global.ClaudeOpenStockFlowStorage;
   }
 })(typeof window !== "undefined" ? window : globalThis);

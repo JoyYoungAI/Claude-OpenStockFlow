@@ -1,4 +1,4 @@
-# OpenStockFlow — CLAUDE.md
+# Claude-OpenStockFlow — CLAUDE.md
 > 大補丸 1 號 · 版本日期 2026-06-02
 
 ---
@@ -8,7 +8,7 @@
 純前端、零依賴的進銷存系統。**沒有 Node.js 執行環境、沒有 npm、沒有打包工具。**
 所有 JS 以 `<script>` 標籤載入，執行在瀏覽器中，資料存在 `localStorage`。
 
-Live Demo：https://joyyoungai.github.io/OpenStockFlow/
+Live Demo：https://joyyoungai.github.io/Claude-OpenStockFlow/
 
 ---
 
@@ -68,8 +68,8 @@ app.js              初始化 + 共用函式 + 全域常數
 
 | 類型 | 規則 | 範例 |
 |------|------|------|
-| 瀏覽器全域 export | `global.OpenStockFlowXxx` | `global.OpenStockFlowModels` |
-| Node.js export | `module.exports = global.OpenStockFlowXxx` | 每個模組最後都有 |
+| 瀏覽器全域 export | `global.Claude-OpenStockFlowXxx` | `global.Claude-OpenStockFlowModels` |
+| Node.js export | `module.exports = global.Claude-OpenStockFlowXxx` | 每個模組最後都有 |
 | IIFE 包裝 | `(function(global){ ... })(this)` | 所有 inventory*.js |
 | app*.js 函式 | 直接宣告（全域 scope，無 IIFE） | `function renderPurchases()` |
 

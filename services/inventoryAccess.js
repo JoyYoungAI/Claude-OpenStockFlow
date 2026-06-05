@@ -226,7 +226,7 @@
     normalizeRole
   };
 
-  global.OpenStockFlowAccess = api;
+  global.ClaudeOpenStockFlowAccess = api;
 
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;

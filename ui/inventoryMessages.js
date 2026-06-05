@@ -24,8 +24,8 @@
   }
 
   function message(key, language) {
-    if (global.OpenStockFlowI18n) {
-      return global.OpenStockFlowI18n.text(language || currentLanguage(), `messages.${key}`, fallbackMessages[key] || fallbackMessages.fallback);
+    if (global.ClaudeOpenStockFlowI18n) {
+      return global.ClaudeOpenStockFlowI18n.text(language || currentLanguage(), `messages.${key}`, fallbackMessages[key] || fallbackMessages.fallback);
     }
 
     return fallbackMessages[key] || fallbackMessages.fallback;
@@ -47,12 +47,12 @@
     return message(fallbackKey);
   }
 
-  global.OpenStockFlowMessages = {
+  global.ClaudeOpenStockFlowMessages = {
     message,
     transactionError
   };
 
   if (typeof module !== "undefined") {
-    module.exports = global.OpenStockFlowMessages;
+    module.exports = global.ClaudeOpenStockFlowMessages;
   }
 })(typeof window !== "undefined" ? window : globalThis);

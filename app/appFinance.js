@@ -14,9 +14,9 @@ function bindFinanceHandlers() {
       date: data.date,
       note: data.note
     });
-    if (!payment) { setStatus(OpenStockFlowMessages.message("paymentSaveFailed"), true); return; }
-    if (payment.error === "PAYMENT_EXCEEDS_BALANCE") { setStatus(OpenStockFlowMessages.message("paymentExceedsBalance"), true); return; }
-    if (payment.error === "INVALID_PAYMENT_DIRECTION") { setStatus(OpenStockFlowMessages.message("invalidPaymentDirection"), true); return; }
+    if (!payment) { setStatus(ClaudeOpenStockFlowMessages.message("paymentSaveFailed"), true); return; }
+    if (payment.error === "PAYMENT_EXCEEDS_BALANCE") { setStatus(ClaudeOpenStockFlowMessages.message("paymentExceedsBalance"), true); return; }
+    if (payment.error === "INVALID_PAYMENT_DIRECTION") { setStatus(ClaudeOpenStockFlowMessages.message("invalidPaymentDirection"), true); return; }
     recordAudit("create", {
       entityType: "payment", entityId: payment.id,
       summary: `登錄${payment.direction === "in" ? "收款" : "付款"}`,

@@ -1,8 +1,8 @@
-# OpenStockFlow 進銷存系統
+# Claude-OpenStockFlow 進銷存系統
 
 純前端、零依賴的進銷存系統，直接用瀏覽器開啟即可使用，無需安裝任何套件或伺服器，所有資料存在 localStorage。
 
-**[線上 Demo](https://joyyoungai.github.io/OpenStockFlow/)**
+**[線上 Demo](https://joyyoungai.github.io/Claude-OpenStockFlow/)**
 
 > 本版遷移由 Codex 實作與驗證；Claude hook 已退役，不再作為日常流程。
 

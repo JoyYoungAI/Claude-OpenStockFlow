@@ -2,10 +2,10 @@ const appVersion = "1.17.2";
 const assetVersion = "1.17.2";
 const accessRoleStorageKey = "stockflow-current-role-v1";
 const currentEmployeeStorageKey = "stockflow-current-employee-v1";
-const storage = OpenStockFlowStorage.createInventoryStorage({ seedState, appVersion, assetVersion });
+const storage = ClaudeOpenStockFlowStorage.createInventoryStorage({ seedState, appVersion, assetVersion });
 const initialLoad = storage.loadState();
 let store = createInventoryStore(initialLoad.state);
-const accessControl = OpenStockFlowAccess.createInventoryAccess({
+const accessControl = ClaudeOpenStockFlowAccess.createInventoryAccess({
   getStore: () => store,
   getCurrentUser: () => currentUser
 });
@@ -89,7 +89,7 @@ const backupExportButton = document.querySelector("#backup-export-button");
 const backupFileInput = document.querySelector("#backup-file-input");
 const restoreButton = document.querySelector("#restore-button");
 const backupPreview = document.querySelector("#backup-preview");
-const auditControl = OpenStockFlowAudit.createInventoryAudit({
+const auditControl = ClaudeOpenStockFlowAudit.createInventoryAudit({
   getStore: () => store,
   getCurrentUser: () => currentUser,
   document,
@@ -98,7 +98,7 @@ const auditControl = OpenStockFlowAudit.createInventoryAudit({
   formatDate,
   roleLabel
 });
-const backupControl = OpenStockFlowBackup.createInventoryBackup({
+const backupControl = ClaudeOpenStockFlowBackup.createInventoryBackup({
   document,
   storage,
   backupPreview,
@@ -107,7 +107,7 @@ const backupControl = OpenStockFlowBackup.createInventoryBackup({
   t,
   escapeHtml
 });
-const masterDataUi = OpenStockFlowMasterDataUi.createInventoryMasterDataUi({
+const masterDataUi = ClaudeOpenStockFlowMasterDataUi.createInventoryMasterDataUi({
   document,
   getStore: () => store,
   fields: { categoryQuery, warehouseQuery, departmentQuery, employeeQuery, partnerQuery, partnerRoleFilter },
@@ -267,7 +267,7 @@ function handleDocumentWorkflow(type, id, workflowAction) {
   }
   const result = type === "purchase" ? store.transitionPurchase(id, workflowAction, { user: currentUser.name, reason }) : store.transitionSale(id, workflowAction, { user: currentUser.name, reason });
   if (!result) { setStatus(t("messages.approvalActionFailed", "單據狀態無法更新。"), true); return; }
-  if (result.error === "INSUFFICIENT_STOCK") { setStatus(OpenStockFlowMessages.message("insufficientStock"), true); return; }
+  if (result.error === "INSUFFICIENT_STOCK") { setStatus(ClaudeOpenStockFlowMessages.message("insufficientStock"), true); return; }
   if (result.error) { setStatus(t("messages.approvalActionFailed", "單據狀態無法更新。"), true); return; }
   saveState();
   recordAudit("update", {
@@ -311,7 +311,7 @@ function handleReturn(type, id) {
   const result = type === "purchase" ? store.addPurchaseReturn(input) : store.addSalesReturn(input);
   if (!result) { setStatus(t("messages.returnSaveFailed", "退貨單無法建立。"), true); return; }
   if (result.error === "RETURN_QUANTITY_EXCEEDS_SOURCE") { setStatus(t("messages.returnQuantityExceeded", "退貨數量不可超過原單剩餘可退數量。"), true); return; }
-  if (result.error === "INSUFFICIENT_STOCK") { setStatus(OpenStockFlowMessages.message("insufficientStock"), true); return; }
+  if (result.error === "INSUFFICIENT_STOCK") { setStatus(ClaudeOpenStockFlowMessages.message("insufficientStock"), true); return; }
   saveState();
   recordAudit("create", {
     entityType: type === "purchase" ? "purchaseReturn" : "salesReturn",
@@ -375,7 +375,7 @@ function permissionReason(action) { return accessControl.permissionReason(action
 function modulePermissionReason(moduleName) { return accessControl.modulePermissionReason(moduleName); }
 function actionLabel(action) { return accessControl.actionLabel(action); }
 function moduleLabel(moduleName) { const tab = document.querySelector(`[data-tab="${moduleName}"]`); return tab ? tab.textContent.trim() : moduleName; }
-function normalizeRole(role) { return OpenStockFlowAccess.normalizeRole(role); }
+function normalizeRole(role) { return ClaudeOpenStockFlowAccess.normalizeRole(role); }
 function currentRoleLabel() { return accessControl.currentRoleLabel(); }
 
 function loadCurrentUser() {
@@ -552,7 +552,7 @@ function setDisabledReason(button, disabled, reason) {
 }
 
 function currentLanguage() { const preferences = store && store.getPreferences ? store.getPreferences() : {}; return preferences.interfaceLanguage || "zh-Hant"; }
-function t(path, fallback) { return window.OpenStockFlowI18n ? window.OpenStockFlowI18n.text(currentLanguage(), path, fallback) : (fallback !== undefined ? fallback : path); }
+function t(path, fallback) { return window.ClaudeOpenStockFlowI18n ? window.ClaudeOpenStockFlowI18n.text(currentLanguage(), path, fallback) : (fallback !== undefined ? fallback : path); }
 
 function collectOrderItems(data, priceField) {
   const secondPriceField = `${priceField}2`;

@@ -6,8 +6,8 @@ function bindAdjustmentHandlers() {
     if (!requireAction("stockAdjust")) { return; }
     const data = Object.fromEntries(new FormData(adjustmentForm));
     const adjustment = store.addStockCount(data);
-    if (!adjustment) { setStatus(OpenStockFlowMessages.message("adjustmentFailed"), true); return; }
-    if (adjustment.error === "NO_DIFFERENCE") { setStatus(OpenStockFlowMessages.transactionError(adjustment, "adjustmentFailed")); return; }
+    if (!adjustment) { setStatus(ClaudeOpenStockFlowMessages.message("adjustmentFailed"), true); return; }
+    if (adjustment.error === "NO_DIFFERENCE") { setStatus(ClaudeOpenStockFlowMessages.transactionError(adjustment, "adjustmentFailed")); return; }
     recordAudit("create", {
       entityType: "adjustment", entityId: adjustment.id, documentNo: adjustment.documentNo,
       summary: `建立盤點調整 ${adjustment.documentNo}`,
@@ -31,8 +31,8 @@ function bindAdjustmentHandlers() {
       note: data.note,
       items: collectTransferItems(data)
     });
-    if (!transfer) { setStatus(OpenStockFlowMessages.message("transferOrderFailed"), true); return; }
-    if (transfer.error === "INSUFFICIENT_STOCK") { setStatus(OpenStockFlowMessages.transactionError(transfer, "transferOrderFailed"), true); return; }
+    if (!transfer) { setStatus(ClaudeOpenStockFlowMessages.message("transferOrderFailed"), true); return; }
+    if (transfer.error === "INSUFFICIENT_STOCK") { setStatus(ClaudeOpenStockFlowMessages.transactionError(transfer, "transferOrderFailed"), true); return; }
     recordAudit("create", {
       entityType: "transfer", documentNo: transfer.documentNo,
       relatedDocumentNos: [transfer.documentNo],
