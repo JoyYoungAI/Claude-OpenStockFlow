@@ -112,15 +112,19 @@ function renderOverview() {
     `).join("")
     : `<div class="empty">${t("emptyStates.noLowStock", "目前沒有低庫存商品。")}</div>`;
 
-  const activities = store.listPurchases().slice(0, 3).map((item) => Object.assign({ kind: t("common.purchase", "進貨") }, item))
-    .concat(store.listSales().slice(0, 3).map((item) => Object.assign({ kind: t("common.sale", "銷售") }, item)))
+  const activities = store.listPurchases().slice(0, 3).map((doc) => Object.assign({ kind: t("common.purchase", "進貨"), isPurchase: true }, doc))
+    .concat(store.listSales().slice(0, 3).map((doc) => Object.assign({ kind: t("common.sale", "銷售"), isPurchase: false }, doc)))
     .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id).slice(0, 6);
   document.querySelector("#recent-activity").innerHTML = activities.length
     ? activities.map((item) => {
-      const product = productName(item.productId);
-      const amount = item.kind === "進貨" ? item.quantity * item.unitCost : item.quantity * item.unitPrice;
-      const fieldName = item.kind === "進貨" ? "viewCost" : "viewSalesRevenue";
-      return `<article class="compact-card"><strong>${item.kind} / ${escapeHtml(product)}</strong><span class="compact-meta">${formatDate(item.date)} / ${formatQuantity(item.quantity)} / ${formatRestrictedMoney(amount, fieldName)}</span></article>`;
+      const lines = item.lines || [];
+      const firstLine = lines[0] || {};
+      const product = lines.length > 1
+        ? `${productName(firstLine.productId)} ${t("common.andMore", "等")} ${lines.length} ${t("common.itemUnit", "項")}`
+        : productName(firstLine.productId);
+      const amount = lines.reduce((sum, l) => sum + l.quantity * (item.isPurchase ? (l.unitCost || 0) : (l.unitPrice || 0)), 0);
+      const fieldName = item.isPurchase ? "viewCost" : "viewSalesRevenue";
+      return `<article class="compact-card"><strong>${item.kind} / ${escapeHtml(product)}</strong><span class="compact-meta">${formatDate(item.date)} / ${lines.length > 1 ? `${lines.length} ${t("common.itemUnit", "項")}` : formatQuantity(firstLine.quantity)} / ${formatRestrictedMoney(amount, fieldName)}</span></article>`;
     }).join("")
     : `<div class="empty">${t("emptyStates.noRecentActivity", "尚無進貨或銷售紀錄。")}</div>`;
 
@@ -197,7 +201,7 @@ function renderStock() {
         <td>${escapeHtml(item.product.sku)}</td>
         <td><div class="row-title"><strong>${escapeHtml(item.product.name)}</strong><span>${escapeHtml(item.product.unit)} / ${escapeHtml(item.warehouse ? item.warehouse.name : t("common.unassignedWarehouse", "未指定倉庫"))}</span></div></td>
         <td>${escapeHtml(item.warehouse ? item.warehouse.code : "-")}</td>
-        <td>${escapeHtml(item.product.category)}</td>
+        <td>${escapeHtml(categoryName(item.product.categoryId))}</td>
         <td>${formatQuantity(item.onHand)}</td>
         <td>${formatQuantity(item.adjusted)}</td>
         <td>${formatQuantity(item.product.safetyStock)}</td>

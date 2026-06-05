@@ -1,3 +1,4 @@
+/* Sections: Base, Layout, Controls, Metrics/Nav, Page Layouts, Reports, Panels/Forms, Tables, Badges/Actions, Lists/Cards, States, Learning, Responsive */
 /* Base */
 :root {
   color-scheme: light;
@@ -673,6 +674,8 @@ td {
   font-weight: 900;
 }
 
+.text-danger { color: var(--red); font-weight: 500; }
+
 /* Empty and backup states */
 .empty {
   padding: 24px;
@@ -848,4 +851,3 @@ td {
     position: static;
   }
 }
-.text-danger { color: var(--red); font-weight: 500; }

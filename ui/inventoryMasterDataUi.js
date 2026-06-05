@@ -19,13 +19,13 @@
     }
 
     function renderProductCategoryOptions() {
-      const categories = store().categories();
-      const optionRows = categories.map((category) => `<option value="${options.escapeAttr(category)}">${options.escapeHtml(category)}</option>`).join("");
+      const categories = store().listProductCategories({ activeOnly: true });
+      const optionRows = categories.map((category) => `<option value="${options.escapeAttr(String(category.id))}">${options.escapeHtml(category.name)}</option>`).join("");
 
       options.document.querySelectorAll("[data-category-select]").forEach((select) => {
         const selected = select.value;
-        select.innerHTML = optionRows || '<option value="一般">一般</option>';
-        if (selected && categories.includes(selected)) {
+        select.innerHTML = optionRows || '<option value="0">一般</option>';
+        if (selected && categories.some((cat) => String(cat.id) === selected)) {
           select.value = selected;
         }
       });

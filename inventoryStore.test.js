@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
-const { createInventoryStore } = require("./inventoryStore");
-const { createInventoryAccess } = require("./inventoryAccess");
+const { createInventoryStore } = require("./core/inventoryStore");
+const { createInventoryAccess } = require("./services/inventoryAccess");
 
 let accessUser = { role: "sales", employeeId: 2, departmentId: 2 };
 const accessControl = createInventoryAccess({
@@ -84,7 +84,7 @@ assert.equal(store.listPartners({ role: "supplier", query: "prime" }).length, 1)
 assert.equal(store.deactivatePartner(1).active, false);
 assert.equal(store.listPartners({ role: "supplier", activeOnly: true }).length, 0);
 
-assert.equal(store.addPurchase({ productId: 1, quantity: 10, unitCost: 260, supplier: "Vendor", date: "2026-05-10", note: "PO-1", ownerEmployeeId: 1, ownerDepartmentId: 1, createdByEmployeeId: 1 }).quantity, 10);
+assert.equal(store.addPurchase({ productId: 1, quantity: 10, unitCost: 260, supplier: "Vendor", date: "2026-05-10", note: "PO-1", ownerEmployeeId: 1, ownerDepartmentId: 1, createdByEmployeeId: 1 }).lines[0].quantity, 10);
 assert.equal(store.listPurchases({ query: "vendor" })[0].ownerEmployeeId, 1);
 assert.equal(store.listPurchases({ query: "vendor" })[0].ownerDepartmentId, 1);
 assert.equal(store.inventoryReport().find((item) => item.productId === 1).onHand, 10);
@@ -95,7 +95,7 @@ assert.equal(store.addPurchase({ productId: 1, quantity: 1, unitCost: -1, suppli
 assert.equal(store.addPurchase({ productId: 1, quantity: 1, unitCost: 260, supplier: "Vendor", date: "bad-date" }), null);
 assert.equal(store.addPurchase({ productId: 999, quantity: 1, unitCost: 260, supplier: "Vendor", date: "2026-05-10" }), null);
 
-assert.equal(store.addSale({ productId: 1, quantity: 4, unitPrice: 450, customer: "Retail", date: "2026-05-11", note: "SO-1", ownerEmployeeId: 1, ownerDepartmentId: 1, createdByEmployeeId: 1 }).quantity, 4);
+assert.equal(store.addSale({ productId: 1, quantity: 4, unitPrice: 450, customer: "Retail", date: "2026-05-11", note: "SO-1", ownerEmployeeId: 1, ownerDepartmentId: 1, createdByEmployeeId: 1 }).lines[0].quantity, 4);
 assert.equal(store.listSales({ query: "retail" })[0].ownerEmployeeId, 1);
 assert.equal(store.listSales({ query: "retail" })[0].ownerDepartmentId, 1);
 assert.equal(store.inventoryReport().find((item) => item.productId === 1).onHand, 6);
@@ -201,9 +201,9 @@ const purchaseOrder = orderStore.addPurchaseOrder({
 });
 assert.equal(purchaseOrder.documentNo, "PO-202605-001");
 assert.equal(purchaseOrder.lines.length, 2);
-assert.equal(purchaseOrder.total, 960);
-assert.equal(purchaseOrder.lines.every((line) => line.ownerEmployeeId === 4 && line.ownerDepartmentId === 3), true);
-assert.equal(orderStore.listPurchases({ query: "PO-202605-001" }).length, 2);
+assert.equal(purchaseOrder.lines.reduce((s, l) => s + l.quantity * l.unitCost, 0), 960);
+assert.equal(purchaseOrder.ownerEmployeeId === 4 && purchaseOrder.ownerDepartmentId === 3, true);
+assert.equal(orderStore.listPurchases({ query: "PO-202605-001" }).length, 1);
 
 const saleOrder = orderStore.addSaleOrder({
   customer: "Retail",
@@ -219,9 +219,9 @@ const saleOrder = orderStore.addSaleOrder({
 });
 assert.equal(saleOrder.documentNo, "SO-202605-001");
 assert.equal(saleOrder.lines.length, 2);
-assert.equal(saleOrder.total, 1040);
-assert.equal(saleOrder.lines.every((line) => line.ownerEmployeeId === 2 && line.ownerDepartmentId === 2), true);
-assert.equal(orderStore.listSales({ query: "SO-202605-001" }).length, 2);
+assert.equal(saleOrder.lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0), 1040);
+assert.equal(saleOrder.ownerEmployeeId === 2 && saleOrder.ownerDepartmentId === 2, true);
+assert.equal(orderStore.listSales({ query: "SO-202605-001" }).length, 1);
 assert.equal(orderStore.addSaleOrder({ customer: "Retail", date: "2026-05-16", items: [{ productId: 2, quantity: 99, unitPrice: 290 }] }).error, "INSUFFICIENT_STOCK");
 assert.equal(orderStore.addPurchaseOrder({ warehouseId: 999, supplier: "Vendor Prime", date: "2026-05-16", items: [{ productId: 1, quantity: 1, unitCost: 270 }] }), null);
 assert.equal(orderStore.addSaleOrder({ warehouseId: 999, customer: "Retail", date: "2026-05-16", items: [{ productId: 1, quantity: 1, unitPrice: 460 }] }), null);
@@ -391,8 +391,10 @@ assert.equal(returnStore.listPayables()[0].amount, 2000);
 assert.equal(returnStore.addPurchaseReturn({ sourceLineId: 1, quantity: 99, reason: "Too many", date: "2026-06-02" }).error, "RETURN_QUANTITY_EXCEEDS_SOURCE");
 assert.equal(returnStore.listReturns({ documentType: "salesReturn" }).length, 1);
 assert.equal(returnStore.stockMovements({ query: "SRTN-202606-001" })[0].type, "salesReturn");
-assert.equal(returnStore.reportSummary({ month: "2026-06" }).salesRevenue, -450);
-assert.equal(returnStore.reportSummary({ month: "2026-06" }).purchaseCost, -500);
+const juneReturnSummary = returnStore.reportSummary({ month: "2026-06" });
+assert.equal(juneReturnSummary.salesRevenue, -450);
+assert.equal(juneReturnSummary.purchaseCost, -500);
+assert.equal(juneReturnSummary.grossProfit, -200);
 
 const costingStore = createInventoryStore({
   products: [
@@ -424,7 +426,7 @@ costingStore.addPurchaseOrder({
 });
 assert.equal(costingStore.listProducts().find((item) => item.id === 1).cost, 180);
 assert.equal(costingStore.reportSummary({ month: "2026-06" }).grossProfit, 240);
-assert.equal(costingStore.snapshot().sales[0].costBasis.unitCost, 100);
+assert.equal(costingStore.snapshot().sales[0].lines[0].costBasis.unitCost, 100);
 assert.equal(costingStore.snapshot().costLayers.length, 2);
 
 const warehouseStore = createInventoryStore({
@@ -443,7 +445,7 @@ warehouseStore.addPurchase({ productId: 1, warehouseId: 1, quantity: 10, unitCos
 warehouseStore.addPurchase({ productId: 1, warehouseId: 2, quantity: 5, unitCost: 250, supplier: "Vendor", date: "2026-05-10" });
 assert.equal(warehouseStore.inventoryReport({ warehouseId: 1 }).find((item) => item.productId === 1).onHand, 10);
 assert.equal(warehouseStore.inventoryReport({ warehouseId: 2 }).find((item) => item.productId === 1).onHand, 5);
-assert.equal(warehouseStore.addSale({ productId: 1, warehouseId: 2, quantity: 3, unitPrice: 450, customer: "Retail", date: "2026-05-11" }).quantity, 3);
+assert.equal(warehouseStore.addSale({ productId: 1, warehouseId: 2, quantity: 3, unitPrice: 450, customer: "Retail", date: "2026-05-11" }).lines[0].quantity, 3);
 assert.equal(warehouseStore.inventoryReport({ warehouseId: 2 }).find((item) => item.productId === 1).onHand, 2);
 assert.equal(warehouseStore.inventoryReport({ warehouseId: 1 }).find((item) => item.productId === 1).onHand, 10);
 assert.equal(warehouseStore.addSale({ productId: 1, warehouseId: 2, quantity: 99, unitPrice: 450, customer: "Retail", date: "2026-05-12" }).error, "INSUFFICIENT_STOCK");
@@ -585,17 +587,17 @@ const fkStore = createInventoryStore({
   purchases: [], sales: []
 });
 const fkPurchase = fkStore.addPurchase({ productId: 1, quantity: 5, unitCost: 100, supplierId: 1, date: "2026-04-01" });
-assert.equal(fkPurchase.supplier, "優質供應商", "supplier name auto-filled from supplierId");
+assert.equal(fkPurchase.supplierName, "優質供應商", "supplier name auto-filled from supplierId");
 assert.equal(fkPurchase.supplierId, 1, "supplierId stored on purchase");
 const fkSaleOrder = fkStore.addSaleOrder({ customerId: 2, date: "2026-04-02", items: [{ productId: 1, quantity: 2, unitPrice: 200 }] });
-assert.equal(fkSaleOrder.lines[0].customer, "黃金客戶", "customer name auto-filled from customerId");
-assert.equal(fkSaleOrder.lines[0].customerId, 2, "customerId stored on sale");
+assert.equal(fkSaleOrder.customerName, "黃金客戶", "customer name auto-filled from customerId");
+assert.equal(fkSaleOrder.customerId, 2, "customerId stored on sale");
 const fkPurchaseTextOnly = fkStore.addPurchase({ productId: 1, quantity: 1, unitCost: 100, supplier: "手動輸入商", date: "2026-04-03" });
-assert.equal(fkPurchaseTextOnly.supplier, "手動輸入商", "fallback to text when no supplierId");
+assert.equal(fkPurchaseTextOnly.supplierName, "手動輸入商", "fallback to text when no supplierId");
 assert.equal(fkPurchaseTextOnly.supplierId, 0, "supplierId defaults to 0");
 
 // ── Models split (master/finance/transaction) 合併 export 完整性 ────────────────
-const models = require("./inventoryModels");
+const models = require("./core/inventoryModels");
 ["normalizeProduct", "copyProduct", "normalizeWarehouse", "normalizePartner", "normalizeEmployee"].forEach((fn) => {
   assert.equal(typeof models[fn], "function", `master model export missing: ${fn}`);
 });

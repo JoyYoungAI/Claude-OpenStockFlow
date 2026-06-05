@@ -122,17 +122,17 @@
   function normalizeProduct(input, id) {
     const sku = normalizeText(input && input.sku).toUpperCase();
     const name = normalizeText(input && input.name);
-    const category = normalizeText(input && input.category) || "未分類";
+    const categoryId = Number(input && input.categoryId) || 0;
     const unit = normalizeText(input && input.unit) || "件";
     const cost = nonNegativeNumber(input && input.cost);
     const price = nonNegativeNumber(input && input.price);
     const safetyStock = nonNegativeNumber(input && input.safetyStock);
     if (!sku || !name || cost === null || price === null || safetyStock === null) { return null; }
-    return { id, sku, name, category, unit, cost, price, safetyStock, active: input && input.active === false ? false : true };
+    return { id, sku, name, categoryId, unit, cost, price, safetyStock, active: input && input.active === false ? false : true };
   }
 
   function copyProduct(product) {
-    return { id: Number(product.id), sku: normalizeText(product.sku).toUpperCase(), name: normalizeText(product.name), category: normalizeText(product.category) || "未分類", unit: normalizeText(product.unit) || "件", cost: nonNegativeNumber(product.cost) || 0, price: nonNegativeNumber(product.price) || 0, safetyStock: nonNegativeNumber(product.safetyStock) || 0, active: product.active === false ? false : true };
+    return { id: Number(product.id), sku: normalizeText(product.sku).toUpperCase(), name: normalizeText(product.name), categoryId: Number(product.categoryId) || 0, unit: normalizeText(product.unit) || "件", cost: nonNegativeNumber(product.cost) || 0, price: nonNegativeNumber(product.price) || 0, safetyStock: nonNegativeNumber(product.safetyStock) || 0, active: product.active === false ? false : true };
   }
 
   function sameSku(left, right) {

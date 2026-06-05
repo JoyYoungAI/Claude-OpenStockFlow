@@ -12,6 +12,7 @@
         <div>
           <p class="eyebrow">OpenStockFlow</p>
           <h1>進銷存系統 <span class="version-badge" id="app-version">v0.0.0</span></h1>
+          <p class="eyebrow">Codex 實作驗證；Claude Code 唯讀協作檢視</p>
         </div>
         <div class="header-actions">
           <label class="role-control">
@@ -708,13 +709,14 @@
     (function () {
       var V = "1.17.2";
       var files = [
-        "inventoryUtils", "inventoryModelsMaster", "inventoryModelsFinance", "inventoryModels", "inventoryI18n", "inventoryAccess",
-        "inventoryAudit", "inventoryBackup", "inventoryReports", "inventoryMasterDataUi",
-        "inventoryStoreMaster", "inventoryStoreFinance", "inventoryStoreTransactions",
-        "inventoryStore", "inventoryStorage", "inventoryRenderers", "inventoryMessages",
-        "appSeedData",
-        "appMaster", "appPurchases", "appSales", "appAdjustments", "appFinance", "appReports",
-        "app"
+        "core/inventoryUtils", "core/inventoryModelsMaster", "core/inventoryModelsFinance", "core/inventoryModels", "ui/inventoryI18n", "services/inventoryAccess",
+        "services/inventoryAudit", "services/inventoryBackup", "core/inventoryReports", "ui/inventoryMasterDataUi",
+        "core/inventoryStoreMaster", "core/inventoryStoreFinance", "core/inventoryStoreTransactions",
+        "core/inventoryStore", "core/inventoryStorage", "ui/inventoryRenderers", "ui/inventoryMessages",
+        "app/appSeedData",
+        "app/appFormatters", "app/appTextBaseline", "app/appDocumentUi",
+        "app/appMaster", "app/appPurchases", "app/appSales", "app/appAdjustments", "app/appFinance", "app/appReports",
+        "app/app"
       ];
       function load(i) {
         if (i >= files.length) return;

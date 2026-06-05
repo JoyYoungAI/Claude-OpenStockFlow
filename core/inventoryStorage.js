@@ -1,6 +1,6 @@
 (function (global) {
   const storageKey = "stockflow-inventory-state";
-  const SCHEMA_VERSION = 12;
+  const SCHEMA_VERSION = 13;
 
   function createInventoryStorage(config) {
     const seedState = config.seedState;
@@ -57,18 +57,29 @@
       const migratedPermissionScopes = Array.isArray(rawState.permissionScopes)
         ? rawState.permissionScopes
         : (Array.isArray(seedState.permissionScopes) ? seedState.permissionScopes : []);
+      const migratedCategories = Array.isArray(rawState.productCategories) && rawState.productCategories.length
+        ? rawState.productCategories
+        : categoriesFromProducts(rawState.products);
+      const migratedProducts = migrateCategoryIdOnProducts(
+        Array.isArray(rawState.products) ? rawState.products : [],
+        migratedCategories
+      );
+      const migratedPurchases = migratePurchasesToDocuments(
+        withDefaultPurchaseFields(withDefaultStatus(withDefaultWarehouse(rawState.purchases, migratedWarehouseId), "confirmed"))
+      );
+      const migratedSales = migrateSalesToDocuments(
+        withDefaultSaleFields(withDefaultStatus(withDefaultWarehouse(rawState.sales, migratedWarehouseId), "confirmed"))
+      );
       const state = {
-        products: Array.isArray(rawState.products) ? rawState.products : [],
+        products: migratedProducts,
         partners: Array.isArray(rawState.partners) ? rawState.partners : [],
         departments: migratedDepartments,
         employees: migratedEmployees,
         permissionScopes: migratedPermissionScopes,
-        productCategories: Array.isArray(rawState.productCategories)
-          ? rawState.productCategories
-          : categoriesFromProducts(rawState.products),
+        productCategories: migratedCategories,
         warehouses: migratedWarehouses,
-        purchases: withDefaultPurchaseFields(withDefaultStatus(withDefaultWarehouse(rawState.purchases, migratedWarehouseId), "confirmed")),
-        sales: withDefaultSaleFields(withDefaultStatus(withDefaultWarehouse(rawState.sales, migratedWarehouseId), "confirmed")),
+        purchases: migratedPurchases,
+        sales: migratedSales,
         adjustments: withDefaultWarehouse(rawState.adjustments, migratedWarehouseId),
         transfers: withDefaultTransferWarehouses(rawState.transfers, migratedWarehouseId),
         returns: withDefaultReturnUnitPrice(withDefaultStatus(withDefaultWarehouse(rawState.returns, migratedWarehouseId), "confirmed")),
@@ -144,7 +155,15 @@
         }
       });
 
-      state.purchases.concat(state.sales).concat(state.adjustments).concat(state.returns).forEach((row) => {
+      extractTransactionPairs(state.purchases).concat(extractTransactionPairs(state.sales)).forEach((pair) => {
+        if (!productIds.has(Number(pair.productId))) {
+          errors.push("交易或調整資料指向不存在的商品。");
+        }
+        if (!warehouseIds.has(Number(pair.warehouseId))) {
+          errors.push("交易或調整資料指向不存在的倉庫。");
+        }
+      });
+      state.adjustments.concat(state.returns).forEach((row) => {
         if (!productIds.has(Number(row.productId))) {
           errors.push("交易或調整資料指向不存在的商品。");
         }
@@ -237,6 +256,141 @@
       fromWarehouseId: Number(row && row.fromWarehouseId) || warehouseId,
       toWarehouseId: Number(row && row.toWarehouseId) || warehouseId
     }));
+  }
+
+  // Migrate product.category string → product.categoryId FK
+  function migrateCategoryIdOnProducts(products, categories) {
+    return products.map((product) => {
+      if (Number(product.categoryId)) return product;
+      const catName = String(product.category || "").trim();
+      if (!catName) return Object.assign({}, product, { categoryId: 0 });
+      const found = categories.find((c) =>
+        String(c.name || "").trim().toLowerCase() === catName.toLowerCase()
+      );
+      return Object.assign({}, product, { categoryId: found ? found.id : 0 });
+    });
+  }
+
+  // Convert flat purchase/sale records to embedded-document format (v12 → v13)
+  function migratePurchasesToDocuments(rows) {
+    if (!Array.isArray(rows) || !rows.length) return [];
+    // Already converted: first item has a lines array
+    if (Array.isArray(rows[0] && rows[0].lines)) return rows;
+    // Flat records: group by documentNo
+    const groups = new Map();
+    const order = [];
+    rows.forEach((row) => {
+      const key = String(row.documentNo || "").trim() || `__solo_${row.id}`;
+      if (!groups.has(key)) { groups.set(key, []); order.push(key); }
+      groups.get(key).push(row);
+    });
+    return order.map((key) => {
+      const group = groups.get(key).slice().sort((a, b) => Number(a.id) - Number(b.id));
+      const first = group[0];
+      const doc = {
+        id: Number(first.id),
+        documentNo: String(first.documentNo || "").trim(),
+        date: first.date || "",
+        warehouseId: Number(first.warehouseId) || 1,
+        supplierId: Number(first.supplierId) || 0,
+        supplierName: String(first.supplierName || first.supplier || "").trim(),
+        note: String(first.note || "").trim(),
+        status: first.status || "confirmed",
+        createdBy: String(first.createdBy || "").trim(),
+        ownerEmployeeId: Number(first.ownerEmployeeId) || 0,
+        ownerDepartmentId: Number(first.ownerDepartmentId) || 0,
+        createdByEmployeeId: Number(first.createdByEmployeeId) || 0,
+        lastEditedByEmployeeId: Number(first.lastEditedByEmployeeId) || 0,
+        submittedBy: String(first.submittedBy || "").trim(), submittedAt: String(first.submittedAt || "").trim(),
+        approvedBy: String(first.approvedBy || "").trim(), approvedAt: String(first.approvedAt || "").trim(),
+        rejectedBy: String(first.rejectedBy || "").trim(), rejectedAt: String(first.rejectedAt || "").trim(),
+        rejectReason: String(first.rejectReason || "").trim(),
+        confirmedBy: String(first.confirmedBy || "").trim(), confirmedAt: String(first.confirmedAt || "").trim(),
+        voidRequestedBy: String(first.voidRequestedBy || "").trim(),
+        voidRequestedAt: String(first.voidRequestedAt || "").trim(),
+        voidRequestReason: String(first.voidRequestReason || "").trim(),
+        voidReason: String(first.voidReason || "").trim(),
+        voidedAt: String(first.voidedAt || "").trim(), voidedBy: String(first.voidedBy || "").trim(),
+        sourceDocumentNo: String(first.sourceDocumentNo || "").trim(),
+        reversalDocumentNo: String(first.reversalDocumentNo || "").trim(),
+        relatedDocumentNos: Array.isArray(first.relatedDocumentNos) ? first.relatedDocumentNos : [],
+        createPayable: Boolean(first.createPayable),
+        dueDate: String(first.dueDate || "").trim(),
+        lines: group.map((row) => ({
+          lineId: Number(row.id),
+          productId: Number(row.productId),
+          quantity: Number(row.quantity) || 0,
+          unitCost: Number(row.unitCost) || 0,
+          receivedQuantity: Number(row.receivedQuantity) || 0
+        }))
+      };
+      return doc;
+    });
+  }
+
+  function migrateSalesToDocuments(rows) {
+    if (!Array.isArray(rows) || !rows.length) return [];
+    if (Array.isArray(rows[0] && rows[0].lines)) return rows;
+    const groups = new Map();
+    const order = [];
+    rows.forEach((row) => {
+      const key = String(row.documentNo || "").trim() || `__solo_${row.id}`;
+      if (!groups.has(key)) { groups.set(key, []); order.push(key); }
+      groups.get(key).push(row);
+    });
+    return order.map((key) => {
+      const group = groups.get(key).slice().sort((a, b) => Number(a.id) - Number(b.id));
+      const first = group[0];
+      const doc = {
+        id: Number(first.id),
+        documentNo: String(first.documentNo || "").trim(),
+        date: first.date || "",
+        warehouseId: Number(first.warehouseId) || 1,
+        customerId: Number(first.customerId) || 0,
+        customerName: String(first.customerName || first.customer || "").trim(),
+        commissionStatus: String(first.commissionStatus || "").trim(),
+        note: String(first.note || "").trim(),
+        status: first.status || "confirmed",
+        createdBy: String(first.createdBy || "").trim(),
+        ownerEmployeeId: Number(first.ownerEmployeeId) || 0,
+        ownerDepartmentId: Number(first.ownerDepartmentId) || 0,
+        createdByEmployeeId: Number(first.createdByEmployeeId) || 0,
+        lastEditedByEmployeeId: Number(first.lastEditedByEmployeeId) || 0,
+        submittedBy: String(first.submittedBy || "").trim(), submittedAt: String(first.submittedAt || "").trim(),
+        approvedBy: String(first.approvedBy || "").trim(), approvedAt: String(first.approvedAt || "").trim(),
+        rejectedBy: String(first.rejectedBy || "").trim(), rejectedAt: String(first.rejectedAt || "").trim(),
+        rejectReason: String(first.rejectReason || "").trim(),
+        confirmedBy: String(first.confirmedBy || "").trim(), confirmedAt: String(first.confirmedAt || "").trim(),
+        voidRequestedBy: String(first.voidRequestedBy || "").trim(),
+        voidRequestedAt: String(first.voidRequestedAt || "").trim(),
+        voidRequestReason: String(first.voidRequestReason || "").trim(),
+        voidReason: String(first.voidReason || "").trim(),
+        voidedAt: String(first.voidedAt || "").trim(), voidedBy: String(first.voidedBy || "").trim(),
+        sourceDocumentNo: String(first.sourceDocumentNo || "").trim(),
+        reversalDocumentNo: String(first.reversalDocumentNo || "").trim(),
+        relatedDocumentNos: Array.isArray(first.relatedDocumentNos) ? first.relatedDocumentNos : [],
+        createReceivable: Boolean(first.createReceivable),
+        dueDate: String(first.dueDate || "").trim(),
+        lines: group.map((row) => ({
+          lineId: Number(row.id),
+          productId: Number(row.productId),
+          quantity: Number(row.quantity) || 0,
+          unitPrice: Number(row.unitPrice) || 0,
+          shippedQuantity: Number(row.shippedQuantity) || 0,
+          costBasis: row.costBasis || null
+        }))
+      };
+      return doc;
+    });
+  }
+
+  function extractTransactionPairs(rows) {
+    return (Array.isArray(rows) ? rows : []).flatMap((row) => {
+      if (Array.isArray(row.lines)) {
+        return row.lines.map((line) => ({ productId: line.productId, warehouseId: row.warehouseId }));
+      }
+      return [{ productId: row.productId, warehouseId: row.warehouseId }];
+    });
   }
 
   function categoriesFromProducts(products) {

@@ -3,7 +3,11 @@
 !*/
 !.gitignore
 !*.js
+!*.mjs
 !*.html
 !*.css
 !README.md
 !CLAUDE.md
+!ESM_MIGRATION_WORKLOG.md
+!CUTS.md
+!LAYOUT.md

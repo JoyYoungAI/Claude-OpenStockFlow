@@ -162,3 +162,25 @@ node inventoryStore.test.js
 - commit message: 繁體中文或英文均可，說明 **為何** 而非 **做了什麼**
 - push 需要 GitHub PAT，用完立即在 GitHub 刪除
 - 推送前先確認 `git status` 沒有夾帶 backup zip、.codex/ 等內部檔案
+
+## Current runtime layout
+
+Updated 2026-06-04.
+
+```text
+index.html              browser entry and sequential script loader
+styles.css              global styles
+
+core/                   data models, reports, store, storage
+services/               access control, audit, backup
+ui/                     i18n, messages, renderers, master-data UI widgets
+app/                    app event handlers, shared app UI helpers, seed data
+esm/                    no-build ESM parity modules, not used by browser loader yet
+```
+
+Tests still run from the repository root:
+
+```bash
+node inventoryStore.test.js
+node inventoryEsm.test.mjs
+```

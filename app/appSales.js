@@ -95,23 +95,40 @@ function renderSalesReturns() {
 function renderSales() {
   const sales = store.listSales({ query: saleQuery.value, month: saleMonth.value, includeVoided: saleIncludeVoided.checked });
   document.querySelector("#sale-count").textContent = `${formatCount(sales.length)} ${t("common.countUnit", "筆")}`;
+  const allReturns = store.listReturns({ documentType: "salesReturn" });
   document.querySelector("#sale-list").innerHTML = sales.length
-    ? sales.map((item) => `
-      <article class="record-card">
-        <div>
-          <strong>${escapeHtml(productName(item.productId))} ${documentStatusBadge(item)}</strong>
-          <div class="record-meta">${escapeHtml(item.documentNo || t("common.noDocumentNo", "無單號"))} / ${formatDate(item.date)} / ${escapeHtml(warehouseName(item.warehouseId))} / ${item.customer ? escapeHtml(item.customer) : `<span class="text-danger">${t("common.notFilled", "未填")}${t("common.customer", "客戶")}</span>`} /${escapeHtml(documentResponsibilityText(item))} / ${escapeHtml(item.note || t("common.noNote", "無備註"))}${returnMeta(item, "salesReturn")}${voidMeta(item)}</div>
-          ${voidDetailPanel(item, "sale")}
-        </div>
-        <div class="record-side">
-          <span class="amount expense">-${formatQuantity(item.quantity)} / ${formatRestrictedMoney(item.quantity * item.unitPrice, "viewSalesRevenue")}</span>
-          ${returnDocumentButton(item, "sale")}
-          ${voidReversalButton(item, "sale")}
-          ${reassignDocumentOwnerButton(item, "sale")}
-          ${documentWorkflowButtons(item, "sale")}
-          ${voidDocumentButton(item, "sale")}
-        </div>
-      </article>
-    `).join("")
+    ? sales.map((doc) => {
+      const customerDisplay = doc.customerName
+        ? escapeHtml(doc.customerName)
+        : `<span class="text-danger">${t("common.notFilled", "未填")}${t("common.customer", "客戶")}</span>`;
+      const lines = doc.lines || [];
+      const linesTotal = lines.reduce((sum, l) => sum + l.quantity * l.unitPrice, 0);
+      const linesHtml = lines.map((line) => {
+        const returned = allReturns.filter((r) => r.sourceLineId === line.lineId).reduce((s, r) => s + r.quantity, 0);
+        const remaining = line.quantity - returned;
+        const canReturn = !isVoidedDocument(doc) && ["confirmed", "amended", "voidRequested"].includes(doc.status || "confirmed") && canPerform("createSalesReturn", { targetDocument: doc });
+        const returnBtn = canReturn && remaining > 0
+          ? `<button class="text-button" type="button" data-return-sale-id="${line.lineId}" title="${escapeAttr(t("tooltips.salesReturn", "建立銷售退貨，會回補庫存並調整應收。"))}">${t("actions.createReturn", "退貨")}</button>`
+          : canReturn ? `<button class="text-button" type="button" disabled title="${escapeAttr(t("tooltips.returnCompleted", "此單據已無可退數量。"))}">${t("actions.createReturn", "退貨")}</button>` : "";
+        return `<div class="record-meta">${escapeHtml(productName(line.productId))} × ${formatQuantity(line.quantity)} / ${formatRestrictedMoney(line.unitPrice, "viewSalesRevenue")}${returned ? ` / ${t("documentStatus.returnedQuantity", "已退")} ${formatQuantity(returned)}` : ""} ${returnBtn}</div>`;
+      }).join("");
+      return `
+        <article class="record-card">
+          <div>
+            <strong>${escapeHtml(doc.documentNo || t("common.noDocumentNo", "無單號"))} ${documentStatusBadge(doc)}</strong>
+            <div class="record-meta">${formatDate(doc.date)} / ${escapeHtml(warehouseName(doc.warehouseId))} / ${customerDisplay} / ${escapeHtml(documentResponsibilityText(doc))} / ${escapeHtml(doc.note || t("common.noNote", "無備註"))}${voidMeta(doc)}</div>
+            ${linesHtml}
+            ${voidDetailPanel(doc, "sale")}
+          </div>
+          <div class="record-side">
+            <span class="amount expense">-${formatRestrictedMoney(linesTotal, "viewSalesRevenue")}</span>
+            ${voidReversalButton(doc, "sale")}
+            ${reassignDocumentOwnerButton(doc, "sale")}
+            ${documentWorkflowButtons(doc, "sale")}
+            ${voidDocumentButton(doc, "sale")}
+          </div>
+        </article>
+      `;
+    }).join("")
     : `<div class="empty">${t("emptyStates.noSales", "尚無銷售紀錄。")}</div>`;
 }

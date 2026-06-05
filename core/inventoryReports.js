@@ -4,21 +4,68 @@
   const { normalizeText } = utils;
   const { copyProduct, copyWarehouse } = models;
 
+  // ── Document line expansion helpers ─────────────────────────────────────────
+
+  // Expand purchase documents into flat line rows for reporting
+  function expandPurchaseLines(docs) {
+    if (!Array.isArray(docs)) return [];
+    return docs.flatMap((doc) => {
+      if (!Array.isArray(doc.lines)) return [];
+      return doc.lines.map((line) => ({
+        lineId: line.lineId,
+        docId: doc.id,
+        productId: line.productId,
+        warehouseId: doc.warehouseId,
+        quantity: line.quantity,
+        unitCost: line.unitCost,
+        receivedQuantity: line.receivedQuantity || 0,
+        date: doc.date,
+        documentNo: doc.documentNo,
+        supplierName: doc.supplierName,
+        note: doc.note,
+        status: doc.status
+      }));
+    });
+  }
+
+  // Expand sale documents into flat line rows for reporting
+  function expandSaleLines(docs) {
+    if (!Array.isArray(docs)) return [];
+    return docs.flatMap((doc) => {
+      if (!Array.isArray(doc.lines)) return [];
+      return doc.lines.map((line) => ({
+        lineId: line.lineId,
+        docId: doc.id,
+        productId: line.productId,
+        warehouseId: doc.warehouseId,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        shippedQuantity: line.shippedQuantity || 0,
+        costBasis: line.costBasis,
+        date: doc.date,
+        documentNo: doc.documentNo,
+        customerName: doc.customerName,
+        note: doc.note,
+        status: doc.status
+      }));
+    });
+  }
+
+  // ── Report functions ─────────────────────────────────────────────────────────
+
   function inventoryReport(state, options) {
     const filter = Object.assign({ query: "", category: "", lowStockOnly: false, sort: "sku" }, options);
     const query = normalizeText(filter.query).toLowerCase();
     const rows = state.products
-      .filter((product) => !filter.category || product.category === filter.category)
+      .filter((product) => !filter.category || String(product.categoryId) === String(filter.category))
       .reduce((result, product) => result.concat(warehousesForReport(state, filter.warehouseId).map((warehouse) => stockForProduct(state, product.id, warehouse.id))), [])
       .filter((item) => {
         if (!query) {
           return true;
         }
-
         return [
           item.product && item.product.sku,
           item.product && item.product.name,
-          item.product && item.product.category,
           item.warehouse && item.warehouse.code,
           item.warehouse && item.warehouse.name
         ].some((value) => normalizeText(value).toLowerCase().includes(query));
@@ -143,31 +190,31 @@
 
   function reportSummary(state, options) {
     const filter = Object.assign({ month: "" }, options);
-    const purchaseRows = filterByMonth(activeRows(state.purchases), filter.month);
-    const saleRows = filterByMonth(activeRows(state.sales), filter.month);
+    const purchaseLines = filterByMonth(expandPurchaseLines(activeRows(state.purchases)), filter.month);
+    const saleLines = filterByMonth(expandSaleLines(activeRows(state.sales)), filter.month);
     const salesReturnRows = filterByMonth(activeRows(state.returns || []).filter((item) => item.documentType === "salesReturn"), filter.month);
     const purchaseReturnRows = filterByMonth(activeRows(state.returns || []).filter((item) => item.documentType === "purchaseReturn"), filter.month);
-    const purchaseCost = purchaseRows.reduce((total, item) => total + item.quantity * item.unitCost, 0)
-      - purchaseReturnRows.reduce((total, item) => total + item.quantity * item.unitAmount, 0);
-    const purchaseQuantity = purchaseRows.reduce((total, item) => total + item.quantity, 0)
+    const purchaseCost = purchaseLines.reduce((total, item) => total + item.quantity * item.unitCost, 0)
+      - purchaseReturnRows.reduce((total, item) => total + item.quantity * item.unitPrice, 0);
+    const purchaseQuantity = purchaseLines.reduce((total, item) => total + item.quantity, 0)
       - purchaseReturnRows.reduce((total, item) => total + item.quantity, 0);
-    const salesRevenue = saleRows.reduce((total, item) => total + item.quantity * item.unitPrice, 0)
-      - salesReturnRows.reduce((total, item) => total + item.quantity * item.unitAmount, 0);
-    const salesQuantity = saleRows.reduce((total, item) => total + item.quantity, 0)
+    const salesRevenue = saleLines.reduce((total, item) => total + item.quantity * item.unitPrice, 0)
+      - salesReturnRows.reduce((total, item) => total + item.quantity * item.unitPrice, 0);
+    const salesQuantity = saleLines.reduce((total, item) => total + item.quantity, 0)
       - salesReturnRows.reduce((total, item) => total + item.quantity, 0);
-    const grossProfit = saleRows.reduce((total, item) => {
+    const grossProfit = saleLines.reduce((total, item) => {
       return total + item.quantity * item.unitPrice - saleCost(item);
     }, 0) - salesReturnRows.reduce((total, item) => {
-      return total + item.quantity * item.unitAmount - returnCost(item);
+      return total + item.quantity * item.unitPrice - returnCost(item);
     }, 0);
 
     return {
       purchaseCost,
       purchaseQuantity,
-      purchaseCount: purchaseRows.length,
+      purchaseCount: purchaseLines.length,
       salesRevenue,
       salesQuantity,
-      salesCount: saleRows.length,
+      salesCount: saleLines.length,
       grossProfit,
       marginRate: salesRevenue > 0 ? grossProfit / salesRevenue : 0
     };
@@ -176,50 +223,53 @@
   function stockMovements(state, options) {
     const filter = Object.assign({ month: "", query: "" }, options);
     const query = normalizeText(filter.query).toLowerCase();
-    const purchaseMovements = activeRows(state.purchases).map((purchase) => {
-      const product = findProduct(state, purchase.productId);
-      const warehouse = findWarehouse(state, purchase.warehouseId);
+
+    const purchaseMovements = expandPurchaseLines(activeRows(state.purchases)).map((line) => {
+      const product = findProduct(state, line.productId);
+      const warehouse = findWarehouse(state, line.warehouseId);
       return {
-        id: `purchase-${purchase.id}`,
-        sourceId: purchase.id,
+        id: `purchase-${line.lineId}`,
+        sourceId: line.lineId,
         type: "purchase",
         label: "進貨",
-        date: purchase.date,
-        productId: purchase.productId,
-        warehouseId: purchase.warehouseId,
+        date: line.date,
+        productId: line.productId,
+        warehouseId: line.warehouseId,
         warehouseCode: warehouse ? warehouse.code : "",
         warehouseName: warehouse ? warehouse.name : "",
         sku: product ? product.sku : "",
         productName: product ? product.name : "未知商品",
-        quantity: purchase.quantity,
-        amount: purchase.quantity * purchase.unitCost,
-        party: purchase.supplier,
-        note: purchase.note,
-        documentNo: purchase.documentNo
+        quantity: line.quantity,
+        amount: line.quantity * line.unitCost,
+        party: line.supplierName,
+        note: line.note,
+        documentNo: line.documentNo
       };
     });
-    const saleMovements = activeRows(state.sales).map((sale) => {
-      const product = findProduct(state, sale.productId);
-      const warehouse = findWarehouse(state, sale.warehouseId);
+
+    const saleMovements = expandSaleLines(activeRows(state.sales)).map((line) => {
+      const product = findProduct(state, line.productId);
+      const warehouse = findWarehouse(state, line.warehouseId);
       return {
-        id: `sale-${sale.id}`,
-        sourceId: sale.id,
+        id: `sale-${line.lineId}`,
+        sourceId: line.lineId,
         type: "sale",
         label: "銷售",
-        date: sale.date,
-        productId: sale.productId,
-        warehouseId: sale.warehouseId,
+        date: line.date,
+        productId: line.productId,
+        warehouseId: line.warehouseId,
         warehouseCode: warehouse ? warehouse.code : "",
         warehouseName: warehouse ? warehouse.name : "",
         sku: product ? product.sku : "",
         productName: product ? product.name : "未知商品",
-        quantity: -sale.quantity,
-        amount: sale.quantity * sale.unitPrice,
-        party: sale.customer,
-        note: sale.note,
-        documentNo: sale.documentNo
+        quantity: -line.quantity,
+        amount: line.quantity * line.unitPrice,
+        party: line.customerName,
+        note: line.note,
+        documentNo: line.documentNo
       };
     });
+
     const adjustmentMovements = activeRows(state.adjustments).map((adjustment) => {
       const product = findProduct(state, adjustment.productId);
       const warehouse = findWarehouse(state, adjustment.warehouseId);
@@ -242,6 +292,7 @@
         documentNo: adjustment.documentNo
       };
     });
+
     const transferMovements = activeRows(state.transfers || []).flatMap((transfer) => {
       const product = findProduct(state, transfer.productId);
       const fromWarehouse = findWarehouse(state, transfer.fromWarehouseId);
@@ -277,6 +328,7 @@
         })
       ];
     });
+
     const returnMovements = activeRows(state.returns || []).map((returnRow) => {
       const product = findProduct(state, returnRow.productId);
       const warehouse = findWarehouse(state, returnRow.warehouseId);
@@ -311,7 +363,6 @@
         if (!query) {
           return true;
         }
-
         return [item.sku, item.productName, item.warehouseCode, item.warehouseName, item.documentNo, item.party, item.note, item.label]
           .some((value) => normalizeText(value).toLowerCase().includes(query));
       })
@@ -323,7 +374,7 @@
       sku: item.product.sku,
       name: item.product.name,
       warehouse: item.warehouse ? `${item.warehouse.code} ${item.warehouse.name}` : "",
-      category: item.product.category,
+      categoryId: item.product.categoryId,
       unit: item.product.unit,
       onHand: item.onHand,
       adjusted: item.adjusted,
@@ -340,14 +391,15 @@
   function stockForProduct(state, productId, warehouseId) {
     const product = findProduct(state, productId);
     const warehouse = warehouseId ? findWarehouse(state, warehouseId) : null;
-    const purchased = state.purchases
-      .filter(isActiveDocument)
-      .filter((purchase) => purchase.productId === Number(productId) && (!warehouseId || purchase.warehouseId === Number(warehouseId)))
-      .reduce((total, purchase) => total + purchase.quantity, 0);
-    const sold = state.sales
-      .filter(isActiveDocument)
-      .filter((sale) => sale.productId === Number(productId) && (!warehouseId || sale.warehouseId === Number(warehouseId)))
-      .reduce((total, sale) => total + sale.quantity, 0);
+    const activePurchaseLines = expandPurchaseLines(state.purchases.filter(isActiveDocument));
+    const activeSaleLines = expandSaleLines(state.sales.filter(isActiveDocument));
+
+    const purchased = activePurchaseLines
+      .filter((l) => l.productId === Number(productId) && (!warehouseId || l.warehouseId === Number(warehouseId)))
+      .reduce((total, l) => total + l.quantity, 0);
+    const sold = activeSaleLines
+      .filter((l) => l.productId === Number(productId) && (!warehouseId || l.warehouseId === Number(warehouseId)))
+      .reduce((total, l) => total + l.quantity, 0);
     const salesReturned = (state.returns || [])
       .filter(isActiveDocument)
       .filter((returnRow) => returnRow.documentType === "salesReturn" && returnRow.productId === Number(productId) && (!warehouseId || returnRow.warehouseId === Number(warehouseId)))
@@ -368,10 +420,9 @@
       .filter(isActiveDocument)
       .filter((transfer) => transfer.productId === Number(productId) && (!warehouseId || transfer.fromWarehouseId === Number(warehouseId)))
       .reduce((total, transfer) => total + transfer.quantity, 0);
-    const revenue = state.sales
-      .filter(isActiveDocument)
-      .filter((sale) => sale.productId === Number(productId) && (!warehouseId || sale.warehouseId === Number(warehouseId)))
-      .reduce((total, sale) => total + sale.quantity * sale.unitPrice, 0)
+    const revenue = activeSaleLines
+      .filter((l) => l.productId === Number(productId) && (!warehouseId || l.warehouseId === Number(warehouseId)))
+      .reduce((total, l) => total + l.quantity * l.unitPrice, 0)
       - (state.returns || [])
         .filter(isActiveDocument)
         .filter((returnRow) => returnRow.documentType === "salesReturn" && returnRow.productId === Number(productId) && (!warehouseId || returnRow.warehouseId === Number(warehouseId)))
@@ -380,10 +431,9 @@
     const netSold = sold - salesReturned;
     const onHand = netPurchased + adjusted + transferredIn - transferredOut - netSold;
     const cost = product ? product.cost : 0;
-    const soldCost = state.sales
-      .filter(isActiveDocument)
-      .filter((sale) => sale.productId === Number(productId) && (!warehouseId || sale.warehouseId === Number(warehouseId)))
-      .reduce((total, sale) => total + saleCost(sale), 0);
+    const soldCost = activeSaleLines
+      .filter((l) => l.productId === Number(productId) && (!warehouseId || l.warehouseId === Number(warehouseId)))
+      .reduce((total, l) => total + saleCost(l), 0);
     const returnedCost = (state.returns || [])
       .filter(isActiveDocument)
       .filter((returnRow) => returnRow.documentType === "salesReturn" && returnRow.productId === Number(productId) && (!warehouseId || returnRow.warehouseId === Number(warehouseId)))
@@ -450,15 +500,14 @@
     return rows.filter(isActiveDocument);
   }
 
-  function saleCost(sale) {
-    if (sale && sale.costBasis && Number.isFinite(Number(sale.costBasis.totalCost))) {
-      return Number(sale.costBasis.totalCost);
+  // saleCost/returnCost operate on a line (costBasis is at line level)
+  function saleCost(line) {
+    if (line && line.costBasis && Number.isFinite(Number(line.costBasis.totalCost))) {
+      return Number(line.costBasis.totalCost);
     }
-
-    if (sale && sale.costBasis && Number.isFinite(Number(sale.costBasis.unitCost))) {
-      return sale.quantity * Number(sale.costBasis.unitCost);
+    if (line && line.costBasis && Number.isFinite(Number(line.costBasis.unitCost))) {
+      return line.quantity * Number(line.costBasis.unitCost);
     }
-
     return 0;
   }
 
@@ -466,7 +515,6 @@
     if (returnRow && returnRow.costBasis && Number.isFinite(Number(returnRow.costBasis.unitCost))) {
       return returnRow.quantity * Number(returnRow.costBasis.unitCost);
     }
-
     return 0;
   }
 

@@ -41,11 +41,13 @@
 
     const models = global.OpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
     const {
-      normalizePurchase, copyPurchase,
-      normalizeSale, copySale,
+      normalizePurchase,
+      normalizeSale,
       normalizeAdjustment, copyAdjustment,
       normalizeTransfer, copyTransfer,
-      normalizeReturn, copyReturn
+      normalizeReturn, copyReturn,
+      copyPurchaseDoc, copyPurchaseLine,
+      copySaleDoc, copySaleLine
     } = models;
 
     function resolvePartnerName(partnerId, role, fallbackName) {
@@ -89,11 +91,11 @@
       }).filter(Boolean);
     }
 
-    function nextDocumentNo(prefix, date, rows) {
+    function nextDocumentNo(prefix, date, docs) {
       const yyyymm = date.slice(0, 7).replace("-", "");
       const base = `${prefix}-${yyyymm}-`;
-      const max = rows.reduce((current, row) => {
-        const value = normalizeText(row.documentNo);
+      const max = docs.reduce((current, doc) => {
+        const value = normalizeText(doc.documentNo);
         if (!value.startsWith(base)) return current;
         const number = Number(value.slice(base.length));
         return Number.isFinite(number) ? Math.max(current, number) : current;
@@ -118,23 +120,25 @@
       };
     }
 
-    function ensureCostLayer(purchase) {
-      if (!purchase || !isDocumentEffective(purchase) ||
-        getCostLayers().some((layer) => layer.sourceLineId === purchase.id && layer.sourceDocumentNo === purchase.documentNo)) {
+    // doc is the purchase document; line is the embedded line object
+    function ensureCostLayerForLine(doc, line) {
+      if (!doc || !isDocumentEffective(doc)) return;
+      if (getCostLayers().some((layer) =>
+        layer.sourceLineId === line.lineId && layer.sourceDocumentNo === doc.documentNo)) {
         return;
       }
       setCostLayers([{
         id: nextCostLayerId(),
         method: "standardCost",
         sourceType: "purchase",
-        sourceDocumentNo: purchase.documentNo,
-        sourceLineId: purchase.id,
-        productId: purchase.productId,
-        warehouseId: purchase.warehouseId,
-        quantity: purchase.quantity,
-        remainingQuantity: purchase.quantity,
-        unitCost: purchase.unitCost,
-        date: purchase.date,
+        sourceDocumentNo: doc.documentNo,
+        sourceLineId: line.lineId,
+        productId: line.productId,
+        warehouseId: doc.warehouseId,
+        quantity: line.quantity,
+        remainingQuantity: line.quantity,
+        unitCost: line.unitCost,
+        date: doc.date,
         createdAt: new Date().toISOString()
       }].concat(getCostLayers()));
       incNextCostLayerId();
@@ -174,70 +178,111 @@
         .reduce((sum, returnRow) => sum + returnRow.quantity, 0);
     }
 
-    function applyPurchaseOrderEffects(documentNo) {
-      const lines = getPurchases().filter((item) => sameDocument(item, documentNo, 0));
-      if (!lines.length) return;
-      const first = lines[0];
-      if (first.createPayable && !hasPayableForDocument(documentNo)) {
+    function applyPurchaseOrderEffects(doc) {
+      if (!doc || !isDocumentEffective(doc) || !Array.isArray(doc.lines)) return;
+      if (doc.createPayable && !hasPayableForDocument(doc.documentNo)) {
         addPayable({
           sourceType: "purchase",
-          sourceDocumentNo: documentNo,
-          supplier: first.supplier,
-          amount: lines.reduce((sum, item) => sum + item.quantity * item.unitCost, 0),
+          sourceDocumentNo: doc.documentNo,
+          supplier: doc.supplierName,
+          amount: doc.lines.reduce((sum, line) => sum + line.quantity * line.unitCost, 0),
           paidAmount: 0,
-          dueDate: first.dueDate || first.date,
-          note: first.note
+          dueDate: doc.dueDate || doc.date,
+          note: doc.note
         });
       }
-      lines.forEach((line) => ensureCostLayer(line));
-      lines.forEach((line) => {
-        setProductsCost(line.productId, line.unitCost);
-      });
+      doc.lines.forEach((line) => ensureCostLayerForLine(doc, line));
+      doc.lines.forEach((line) => { setProductsCost(line.productId, line.unitCost); });
     }
 
-    function applySaleOrderEffects(documentNo) {
-      const lines = getSales().filter((item) => sameDocument(item, documentNo, 0));
-      if (!lines.length) return;
-      const first = lines[0];
-      if (first.createReceivable && !hasReceivableForDocument(documentNo)) {
+    function applySaleOrderEffects(doc) {
+      if (!doc || !isDocumentEffective(doc) || !Array.isArray(doc.lines)) return;
+      if (doc.createReceivable && !hasReceivableForDocument(doc.documentNo)) {
         addReceivable({
           sourceType: "sale",
-          sourceDocumentNo: documentNo,
-          customer: first.customer,
-          amount: lines.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+          sourceDocumentNo: doc.documentNo,
+          customer: doc.customerName,
+          amount: doc.lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0),
           paidAmount: 0,
-          dueDate: first.dueDate || first.date,
-          note: first.note
+          dueDate: doc.dueDate || doc.date,
+          note: doc.note
         });
       }
     }
 
+    // ── Build header common fields for a new document ──────────────────────
+
+    function buildDocumentHeader(input, documentNo, date, warehouseId, status) {
+      const ownerEmployeeId = Number(input && input.ownerEmployeeId) || 0;
+      return {
+        documentNo,
+        date,
+        warehouseId,
+        note: normalizeText(input && input.note),
+        status,
+        createdBy: normalizeText(input && input.createdBy),
+        ownerEmployeeId,
+        ownerDepartmentId: Number(input && input.ownerDepartmentId) || 0,
+        createdByEmployeeId: Number(input && input.createdByEmployeeId) || ownerEmployeeId,
+        lastEditedByEmployeeId: Number(input && input.lastEditedByEmployeeId) || 0,
+        submittedBy: "", submittedAt: "", approvedBy: "", approvedAt: "",
+        rejectedBy: "", rejectedAt: "", rejectReason: "",
+        confirmedBy: "", confirmedAt: "",
+        voidRequestedBy: "", voidRequestedAt: "", voidRequestReason: "",
+        voidReason: "", voidedAt: "", voidedBy: "",
+        sourceDocumentNo: "", reversalDocumentNo: "",
+        relatedDocumentNos: []
+      };
+    }
+
+    function findDocByLineId(docs, lineId) {
+      const id = Number(lineId);
+      return docs.find((doc) =>
+        doc.id === id ||
+        (Array.isArray(doc.lines) && doc.lines.some((l) => l.lineId === id))
+      ) || null;
+    }
+
+    // ── addPurchase ────────────────────────────────────────────────────────
+
     function addPurchase(input) {
-      const purchase = normalizePurchase(input, nextPurchaseId());
-      const product = findProduct(purchase && purchase.productId);
-      const warehouse = resolveActiveWarehouse(purchase && purchase.warehouseId);
-      if (!purchase || !product || !product.active || !warehouse) return null;
+      const flat = normalizePurchase(input, nextPurchaseId());
+      const product = findProduct(flat && flat.productId);
+      const warehouse = resolveActiveWarehouse(flat && flat.warehouseId);
+      if (!flat || !product || !product.active || !warehouse) return null;
+      const lineId = flat.id;
+      const documentNo = flat.documentNo || `PUR-${lineId}`;
       const supplierId = Number(input && input.supplierId) || 0;
-      const saved = Object.assign({}, purchase, {
-        warehouseId: warehouse.id,
+      const doc = Object.assign(buildDocumentHeader(input, documentNo, flat.date, warehouse.id, flat.status || "confirmed"), {
+        id: lineId,
         supplierId,
-        supplier: resolvePartnerName(supplierId, "supplier", purchase.supplier)
+        supplierName: resolvePartnerName(supplierId, "supplier", flat.supplierName),
+        createPayable: Boolean(input && input.createPayable),
+        dueDate: flat.dueDate || flat.date,
+        lines: [{
+          lineId,
+          productId: flat.productId,
+          quantity: flat.quantity,
+          unitCost: flat.unitCost,
+          receivedQuantity: flat.receivedQuantity || 0
+        }]
       });
       incNextPurchaseId();
-      setPurchases([saved].concat(getPurchases()));
-      if (input && input.createPayable) {
+      setPurchases([doc].concat(getPurchases()));
+      if (isDocumentEffective(doc)) {
+        applyPurchaseOrderEffects(doc);
+      } else if (doc.createPayable) {
         addPayable({
           sourceType: "purchase",
-          sourceDocumentNo: saved.documentNo || `PUR-${saved.id}`,
-          supplier: saved.supplier,
-          amount: saved.quantity * saved.unitCost,
+          sourceDocumentNo: doc.documentNo,
+          supplier: doc.supplierName,
+          amount: doc.lines[0].quantity * doc.lines[0].unitCost,
           paidAmount: 0,
-          dueDate: input.dueDate || saved.date,
-          note: saved.note
+          dueDate: doc.dueDate || doc.date,
+          note: doc.note
         });
       }
-      setProductsCost(saved.productId, saved.unitCost);
-      return copyPurchase(saved);
+      return copyPurchaseDoc(doc);
     }
 
     function addPurchaseOrder(input) {
@@ -251,71 +296,74 @@
       })) return null;
       const documentNo = normalizeText(input && input.documentNo) || nextDocumentNo("PO", date, getPurchases());
       const status = normalizeDocumentStatus(input && input.status);
-      const createPayable = Boolean(input && input.createPayable);
-      const dueDate = normalizeDate(input && input.dueDate) || date;
-      const createdBy = normalizeText(input && input.createdBy);
-      const ownerEmployeeId = Number(input && input.ownerEmployeeId) || 0;
-      const ownerDepartmentId = Number(input && input.ownerDepartmentId) || 0;
-      const createdByEmployeeId = Number(input && input.createdByEmployeeId) || ownerEmployeeId;
-      const lastEditedByEmployeeId = Number(input && input.lastEditedByEmployeeId) || 0;
-      const created = items.map((item) => {
-        const supplierId = Number(input && input.supplierId) || 0;
-        const purchase = {
-          id: nextPurchaseId(),
-          productId: item.productId,
-          quantity: item.quantity,
-          unitCost: item.unitCost,
-          supplierId,
-          supplier: resolvePartnerName(supplierId, "supplier", normalizeText(input && input.supplier)),
-          date, note: normalizeText(input && input.note),
-          documentNo, warehouseId: warehouse.id,
-          status, createPayable, dueDate, createdBy,
-          ownerEmployeeId, ownerDepartmentId, createdByEmployeeId, lastEditedByEmployeeId
-        };
+      const supplierId = Number(input && input.supplierId) || 0;
+      const lines = items.map((item) => {
+        const lineId = nextPurchaseId();
         incNextPurchaseId();
-        return purchase;
+        return { lineId, productId: item.productId, quantity: item.quantity, unitCost: item.unitCost, receivedQuantity: 0 };
       });
-      setPurchases(created.concat(getPurchases()));
-      if (isDocumentEffective({ status })) {
-        applyPurchaseOrderEffects(documentNo);
+      const headerId = lines[0].lineId;
+      const doc = Object.assign(buildDocumentHeader(input, documentNo, date, warehouse.id, status), {
+        id: headerId,
+        supplierId,
+        supplierName: resolvePartnerName(supplierId, "supplier", normalizeText(input && (input.supplierName || input.supplier))),
+        createPayable: Boolean(input && input.createPayable),
+        dueDate: normalizeDate(input && input.dueDate) || date,
+        lines
+      });
+      setPurchases([doc].concat(getPurchases()));
+      if (isDocumentEffective(doc)) {
+        applyPurchaseOrderEffects(doc);
       }
-      return {
-        documentNo,
-        lines: created.map(copyPurchase),
-        total: created.reduce((sum, item) => sum + item.quantity * item.unitCost, 0)
-      };
+      return copyPurchaseDoc(doc);
     }
 
+    // ── addSale ────────────────────────────────────────────────────────────
+
     function addSale(input) {
-      const sale = normalizeSale(input, nextSaleId());
-      const product = findProduct(sale && sale.productId);
-      const warehouse = resolveActiveWarehouse(sale && sale.warehouseId);
-      if (!sale || !product || !product.active || !warehouse) return null;
-      if (stockForProduct(sale.productId, warehouse.id).onHand < sale.quantity) {
+      const flat = normalizeSale(input, nextSaleId());
+      const product = findProduct(flat && flat.productId);
+      const warehouse = resolveActiveWarehouse(flat && flat.warehouseId);
+      if (!flat || !product || !product.active || !warehouse) return null;
+      if (stockForProduct(flat.productId, warehouse.id).onHand < flat.quantity) {
         return { error: "INSUFFICIENT_STOCK" };
       }
+      const lineId = flat.id;
+      const documentNo = flat.documentNo || `SAL-${lineId}`;
       const customerId = Number(input && input.customerId) || 0;
-      const saved = Object.assign({}, sale, {
-        warehouseId: warehouse.id,
+      const doc = Object.assign(buildDocumentHeader(input, documentNo, flat.date, warehouse.id, flat.status || "confirmed"), {
+        id: lineId,
         customerId,
-        customer: resolvePartnerName(customerId, "customer", sale.customer),
-        costBasis: createCostBasis(sale.productId, sale.quantity)
+        customerName: resolvePartnerName(customerId, "customer", flat.customerName),
+        commissionStatus: flat.commissionStatus || "",
+        createReceivable: Boolean(input && input.createReceivable),
+        dueDate: flat.dueDate || flat.date,
+        lines: [{
+          lineId,
+          productId: flat.productId,
+          quantity: flat.quantity,
+          unitPrice: flat.unitPrice,
+          shippedQuantity: flat.shippedQuantity || 0,
+          costBasis: createCostBasis(flat.productId, flat.quantity)
+        }]
       });
       incNextSaleId();
-      setSales([saved].concat(getSales()));
-      consumeCostLayers(saved.productId, saved.warehouseId, saved.quantity);
-      if (input && input.createReceivable) {
-        addReceivable({
-          sourceType: "sale",
-          sourceDocumentNo: saved.documentNo || `SAL-${saved.id}`,
-          customer: saved.customer,
-          amount: saved.quantity * saved.unitPrice,
-          paidAmount: 0,
-          dueDate: input.dueDate || saved.date,
-          note: saved.note
-        });
+      setSales([doc].concat(getSales()));
+      if (isDocumentEffective(doc)) {
+        consumeCostLayers(flat.productId, warehouse.id, flat.quantity);
+        if (doc.createReceivable && !hasReceivableForDocument(doc.documentNo)) {
+          addReceivable({
+            sourceType: "sale",
+            sourceDocumentNo: doc.documentNo,
+            customer: doc.customerName,
+            amount: flat.quantity * flat.unitPrice,
+            paidAmount: 0,
+            dueDate: doc.dueDate || doc.date,
+            note: doc.note
+          });
+        }
       }
-      return copySale(saved);
+      return copySaleDoc(doc);
     }
 
     function addSaleOrder(input) {
@@ -338,108 +386,111 @@
       }
       const documentNo = normalizeText(input && input.documentNo) || nextDocumentNo("SO", date, getSales());
       const status = normalizeDocumentStatus(input && input.status);
-      const createReceivable = Boolean(input && input.createReceivable);
-      const dueDate = normalizeDate(input && input.dueDate) || date;
-      const createdBy = normalizeText(input && input.createdBy);
-      const ownerEmployeeId = Number(input && input.ownerEmployeeId) || 0;
-      const ownerDepartmentId = Number(input && input.ownerDepartmentId) || 0;
-      const createdByEmployeeId = Number(input && input.createdByEmployeeId) || ownerEmployeeId;
-      const lastEditedByEmployeeId = Number(input && input.lastEditedByEmployeeId) || 0;
       const customerId = Number(input && input.customerId) || 0;
-      const created = items.map((item) => {
-        const sale = {
-          id: nextSaleId(),
+      const lines = items.map((item) => {
+        const lineId = nextSaleId();
+        incNextSaleId();
+        return {
+          lineId,
           productId: item.productId,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          customerId,
-          customer: resolvePartnerName(customerId, "customer", normalizeText(input && input.customer)),
-          date, note: normalizeText(input && input.note),
-          documentNo, warehouseId: warehouse.id,
-          status, createReceivable, dueDate, createdBy,
-          ownerEmployeeId, ownerDepartmentId, createdByEmployeeId, lastEditedByEmployeeId,
+          shippedQuantity: 0,
           costBasis: createCostBasis(item.productId, item.quantity)
         };
-        incNextSaleId();
-        return sale;
       });
-      setSales(created.concat(getSales()));
-      if (isDocumentEffective({ status })) {
-        created.forEach((line) => consumeCostLayers(line.productId, line.warehouseId, line.quantity));
-        applySaleOrderEffects(documentNo);
+      const headerId = lines[0].lineId;
+      const doc = Object.assign(buildDocumentHeader(input, documentNo, date, warehouse.id, status), {
+        id: headerId,
+        customerId,
+        customerName: resolvePartnerName(customerId, "customer", normalizeText(input && (input.customerName || input.customer))),
+        commissionStatus: normalizeText(input && input.commissionStatus),
+        createReceivable: Boolean(input && input.createReceivable),
+        dueDate: normalizeDate(input && input.dueDate) || date,
+        lines
+      });
+      setSales([doc].concat(getSales()));
+      if (isDocumentEffective(doc)) {
+        doc.lines.forEach((line) => consumeCostLayers(line.productId, warehouse.id, line.quantity));
+        applySaleOrderEffects(doc);
       }
-      return {
-        documentNo,
-        lines: created.map(copySale),
-        total: created.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-      };
+      return copySaleDoc(doc);
     }
 
+    // ── removePurchase / removeSale ───────────────────────────────────────
+
     function removePurchase(id, options) {
-      const purchase = getPurchases().find((item) => item.id === Number(id));
-      if (!purchase) return false;
-      if (isVoidedDocument(purchase)) return true;
-      const currentStock = stockForProduct(purchase.productId, purchase.warehouseId).onHand;
-      if (isDocumentEffective(purchase) && currentStock - purchase.quantity < 0) {
-        return { error: "NEGATIVE_STOCK" };
+      const doc = findDocByLineId(getPurchases(), id);
+      if (!doc) return false;
+      if (isVoidedDocument(doc)) return true;
+      // Check stock: sum all lines
+      if (isDocumentEffective(doc)) {
+        for (const line of doc.lines) {
+          const currentStock = stockForProduct(line.productId, doc.warehouseId).onHand;
+          if (currentStock - line.quantity < 0) {
+            return { error: "NEGATIVE_STOCK" };
+          }
+        }
       }
       const voidInfo = createVoidInfo(options);
-      setPurchases(getPurchases().map((item) => item.id === purchase.id
+      setPurchases(getPurchases().map((item) => item.id === doc.id
         ? Object.assign({}, item, voidInfo, {
           sourceDocumentNo: item.sourceDocumentNo || item.documentNo,
           relatedDocumentNos: mergeDocumentNos(item.relatedDocumentNos, [item.documentNo])
         }) : item));
-      voidPayablesForDocument(purchase.documentNo, voidInfo);
+      voidPayablesForDocument(doc.documentNo, voidInfo);
       setCostLayers(getCostLayers().map((layer) =>
-        layer.sourceDocumentNo === purchase.documentNo && layer.sourceLineId === purchase.id
+        layer.sourceDocumentNo === doc.documentNo
           ? Object.assign({}, layer, { remainingQuantity: 0 })
           : layer
       ));
       const latestEffectivePurchase = getPurchases().find(
-        (p) => p.productId === purchase.productId && isDocumentEffective(p)
+        (d) => Array.isArray(d.lines) && d.lines.some((l) => l.productId === doc.lines[0].productId) && isDocumentEffective(d)
       );
       if (latestEffectivePurchase) {
-        setProductsCost(purchase.productId, latestEffectivePurchase.unitCost);
+        const latestLine = latestEffectivePurchase.lines.find((l) => l.productId === doc.lines[0].productId);
+        if (latestLine) setProductsCost(doc.lines[0].productId, latestLine.unitCost);
       }
       return true;
     }
 
     function removeSale(id, options) {
-      const sale = getSales().find((item) => item.id === Number(id));
-      if (!sale) return false;
-      if (isVoidedDocument(sale)) return true;
+      const doc = findDocByLineId(getSales(), id);
+      if (!doc) return false;
+      if (isVoidedDocument(doc)) return true;
       const voidInfo = createVoidInfo(options);
-      setSales(getSales().map((item) => item.id === sale.id
+      setSales(getSales().map((item) => item.id === doc.id
         ? Object.assign({}, item, voidInfo, {
           sourceDocumentNo: item.sourceDocumentNo || item.documentNo,
           relatedDocumentNos: mergeDocumentNos(item.relatedDocumentNos, [item.documentNo]),
           commissionStatus: item.commissionStatus ? "voided" : item.commissionStatus
         }) : item));
-      voidReceivablesForDocument(sale.documentNo, voidInfo);
+      voidReceivablesForDocument(doc.documentNo, voidInfo);
       return true;
     }
 
+    // ── transitionPurchase / transitionSale ───────────────────────────────
+
     function transitionPurchase(id, action, options) {
-      const purchase = getPurchases().find((item) => item.id === Number(id));
-      if (!purchase) return false;
-      const result = transitionDocumentRows(getPurchases(), purchase.documentNo, purchase.id, action, options);
+      const doc = findDocByLineId(getPurchases(), id);
+      if (!doc) return false;
+      const result = transitionDocumentRows(getPurchases(), doc.documentNo, doc.id, action, options);
       if (!result || result.error) return result;
       setPurchases(result.rows);
       if (action === "confirm") {
-        applyPurchaseOrderEffects(result.documentNo);
+        const confirmedDoc = getPurchases().find((d) => d.id === doc.id);
+        if (confirmedDoc) applyPurchaseOrderEffects(confirmedDoc);
       }
-      return result.lines.map(copyPurchase);
+      return result.lines.map(copyPurchaseDoc);
     }
 
     function transitionSale(id, action, options) {
-      const sale = getSales().find((item) => item.id === Number(id));
-      if (!sale) return false;
-      const documentNo = sale.documentNo || "";
+      const doc = findDocByLineId(getSales(), id);
+      if (!doc) return false;
       if (action === "confirm") {
-        const lines = getSales().filter((item) => sameDocument(item, documentNo, sale.id));
         const requestedByProductWarehouse = new Map();
-        lines.forEach((line) => {
-          const key = `${line.productId}:${line.warehouseId}`;
+        doc.lines.forEach((line) => {
+          const key = `${line.productId}:${doc.warehouseId}`;
           requestedByProductWarehouse.set(key, (requestedByProductWarehouse.get(key) || 0) + line.quantity);
         });
         for (const [key, quantity] of requestedByProductWarehouse.entries()) {
@@ -449,62 +500,76 @@
           }
         }
       }
-      const result = transitionDocumentRows(getSales(), documentNo, sale.id, action, options);
+      const result = transitionDocumentRows(getSales(), doc.documentNo, doc.id, action, options);
       if (!result || result.error) return result;
       setSales(result.rows);
       if (action === "confirm") {
         const now = new Date().toISOString();
-        setSales(getSales().map((item) => sameDocument(item, result.documentNo, id)
-          ? Object.assign({}, item, { costBasis: createCostBasis(item.productId, item.quantity, now) })
-          : item));
-        applySaleOrderEffects(result.documentNo);
+        // Update costBasis on each line of the confirmed document
+        setSales(getSales().map((d) => {
+          if (d.id !== doc.id) return d;
+          return Object.assign({}, d, {
+            lines: d.lines.map((line) =>
+              Object.assign({}, line, { costBasis: createCostBasis(line.productId, line.quantity, now) })
+            )
+          });
+        }));
+        const confirmedDoc = getSales().find((d) => d.id === doc.id);
+        if (confirmedDoc) applySaleOrderEffects(confirmedDoc);
       }
-      return result.lines.map(copySale);
+      return result.lines.map(copySaleDoc);
     }
 
     function updatePurchaseOwner(id, input) {
-      const purchase = getPurchases().find((item) => item.id === Number(id));
-      if (!purchase) return false;
-      const result = updateDocumentOwnerRows(getPurchases(), purchase.documentNo, purchase.id, input);
+      const doc = findDocByLineId(getPurchases(), id);
+      if (!doc) return false;
+      const result = updateDocumentOwnerRows(getPurchases(), doc.documentNo, doc.id, input);
       if (!result || result.error) return result;
       setPurchases(result.rows);
-      return result.lines.map(copyPurchase);
+      return result.lines.map(copyPurchaseDoc);
     }
 
     function updateSaleOwner(id, input) {
-      const sale = getSales().find((item) => item.id === Number(id));
-      if (!sale) return false;
-      const result = updateDocumentOwnerRows(getSales(), sale.documentNo, sale.id, input);
+      const doc = findDocByLineId(getSales(), id);
+      if (!doc) return false;
+      const result = updateDocumentOwnerRows(getSales(), doc.documentNo, doc.id, input);
       if (!result || result.error) return result;
       setSales(result.rows);
-      return result.lines.map(copySale);
+      return result.lines.map(copySaleDoc);
     }
 
+    // ── Returns ───────────────────────────────────────────────────────────
+
     function addSalesReturn(input) {
-      const source = getSales().find((item) => item.id === Number(input && input.sourceLineId));
-      if (!source || !isDocumentEffective(source)) return null;
+      const sourceLineId = Number(input && input.sourceLineId);
+      const sourceDoc = findDocByLineId(getSales(), sourceLineId);
+      if (!sourceDoc || !isDocumentEffective(sourceDoc)) return null;
+      const sourceLine = Array.isArray(sourceDoc.lines)
+        ? sourceDoc.lines.find((l) => l.lineId === sourceLineId)
+        : null;
+      if (!sourceLine) return null;
       const quantity = positiveNumber(input && input.quantity);
-      const returned = returnedQuantityForSource("salesReturn", source.id);
-      if (quantity === null || quantity > source.quantity - returned) {
+      const returned = returnedQuantityForSource("salesReturn", sourceLineId);
+      if (quantity === null || quantity > sourceLine.quantity - returned) {
         return { error: "RETURN_QUANTITY_EXCEEDS_SOURCE" };
       }
       const date = normalizeDate(input && input.date) || todayString();
       const returnRow = normalizeReturn({
         documentType: "salesReturn",
         documentNo: nextDocumentNo("SRTN", date, getReturns()),
-        sourceDocumentNo: source.documentNo,
-        sourceLineId: source.id,
-        productId: source.productId,
-        warehouseId: source.warehouseId,
+        sourceDocumentNo: sourceDoc.documentNo,
+        sourceLineId,
+        productId: sourceLine.productId,
+        warehouseId: sourceDoc.warehouseId,
         quantity,
-        unitPrice: source.unitPrice,
-        costBasis: source.costBasis,
+        unitPrice: sourceLine.unitPrice,
+        costBasis: sourceLine.costBasis,
         reason: input && input.reason,
         date,
         inspectionStatus: input && input.inspectionStatus,
         createdBy: input && input.user,
         confirmedBy: input && input.user,
-        relatedDocumentNos: [source.documentNo],
+        relatedDocumentNos: [sourceDoc.documentNo],
         status: "confirmed"
       }, nextReturnId());
       if (!returnRow) return null;
@@ -515,32 +580,37 @@
     }
 
     function addPurchaseReturn(input) {
-      const source = getPurchases().find((item) => item.id === Number(input && input.sourceLineId));
-      if (!source || !isDocumentEffective(source)) return null;
+      const sourceLineId = Number(input && input.sourceLineId);
+      const sourceDoc = findDocByLineId(getPurchases(), sourceLineId);
+      if (!sourceDoc || !isDocumentEffective(sourceDoc)) return null;
+      const sourceLine = Array.isArray(sourceDoc.lines)
+        ? sourceDoc.lines.find((l) => l.lineId === sourceLineId)
+        : null;
+      if (!sourceLine) return null;
       const quantity = positiveNumber(input && input.quantity);
-      const returned = returnedQuantityForSource("purchaseReturn", source.id);
-      if (quantity === null || quantity > source.quantity - returned) {
+      const returned = returnedQuantityForSource("purchaseReturn", sourceLineId);
+      if (quantity === null || quantity > sourceLine.quantity - returned) {
         return { error: "RETURN_QUANTITY_EXCEEDS_SOURCE" };
       }
-      if (stockForProduct(source.productId, source.warehouseId).onHand < quantity) {
+      if (stockForProduct(sourceLine.productId, sourceDoc.warehouseId).onHand < quantity) {
         return { error: "INSUFFICIENT_STOCK" };
       }
       const date = normalizeDate(input && input.date) || todayString();
       const returnRow = normalizeReturn({
         documentType: "purchaseReturn",
         documentNo: nextDocumentNo("PRTN", date, getReturns()),
-        sourceDocumentNo: source.documentNo,
-        sourceLineId: source.id,
-        productId: source.productId,
-        warehouseId: source.warehouseId,
+        sourceDocumentNo: sourceDoc.documentNo,
+        sourceLineId,
+        productId: sourceLine.productId,
+        warehouseId: sourceDoc.warehouseId,
         quantity,
-        unitPrice: source.unitCost,
+        unitPrice: sourceLine.unitCost,
         reason: input && input.reason,
         date,
         inspectionStatus: input && input.inspectionStatus,
         createdBy: input && input.user,
         confirmedBy: input && input.user,
-        relatedDocumentNos: [source.documentNo],
+        relatedDocumentNos: [sourceDoc.documentNo],
         status: "confirmed"
       }, nextReturnId());
       if (!returnRow) return null;
@@ -552,32 +622,34 @@
 
     function createVoidReversal(type, id, options) {
       const isPurchase = type === "purchase";
-      const source = isPurchase
-        ? getPurchases().find((item) => item.id === Number(id))
-        : getSales().find((item) => item.id === Number(id));
-      if (!source || !isVoidedDocument(source)) return null;
-      const existing = findVoidReversal(type, id);
+      const sourceDoc = isPurchase
+        ? findDocByLineId(getPurchases(), id)
+        : findDocByLineId(getSales(), id);
+      if (!sourceDoc || !isVoidedDocument(sourceDoc)) return null;
+      const existing = findVoidReversal(type, sourceDoc.id);
       if (existing) return existing;
-      const date = source.voidedAt ? source.voidedAt.slice(0, 10) : todayString();
+      const firstLine = Array.isArray(sourceDoc.lines) && sourceDoc.lines[0];
+      if (!firstLine) return null;
+      const date = sourceDoc.voidedAt ? sourceDoc.voidedAt.slice(0, 10) : todayString();
       const documentType = isPurchase ? "purchaseReturn" : "salesReturn";
       const documentNo = nextDocumentNo(isPurchase ? "PRTN" : "SRTN", date, getReturns());
-      const user = normalizeText(options && options.user) || source.voidedBy || "本機使用者";
+      const user = normalizeText(options && options.user) || sourceDoc.voidedBy || "本機使用者";
       const returnRow = normalizeReturn({
         documentType,
         documentNo,
-        sourceDocumentNo: source.documentNo,
-        sourceLineId: source.id,
-        productId: source.productId,
-        warehouseId: source.warehouseId,
-        quantity: source.quantity,
-        unitPrice: isPurchase ? source.unitCost : source.unitPrice,
-        costBasis: source.costBasis,
-        reason: `作廢沖銷：${source.voidReason || "未填寫作廢原因"}`,
+        sourceDocumentNo: sourceDoc.documentNo,
+        sourceLineId: sourceDoc.id,  // header.id === first lineId
+        productId: firstLine.productId,
+        warehouseId: sourceDoc.warehouseId,
+        quantity: firstLine.quantity,
+        unitPrice: isPurchase ? firstLine.unitCost : firstLine.unitPrice,
+        costBasis: firstLine.costBasis,
+        reason: `作廢沖銷：${sourceDoc.voidReason || "未填寫作廢原因"}`,
         date,
         inspectionStatus: "reversal",
         createdBy: user,
         confirmedBy: user,
-        relatedDocumentNos: [source.documentNo],
+        relatedDocumentNos: [sourceDoc.documentNo],
         status: "reversed"
       }, nextReturnId());
       if (!returnRow) return null;
@@ -586,12 +658,12 @@
       const linkedSource = {
         status: "reversed",
         reversalDocumentNo: documentNo,
-        relatedDocumentNos: mergeDocumentNos(source.relatedDocumentNos, [source.documentNo, documentNo])
+        relatedDocumentNos: mergeDocumentNos(sourceDoc.relatedDocumentNos, [sourceDoc.documentNo, documentNo])
       };
       if (isPurchase) {
-        setPurchases(getPurchases().map((item) => item.id === source.id ? Object.assign({}, item, linkedSource) : item));
+        setPurchases(getPurchases().map((doc) => doc.id === sourceDoc.id ? Object.assign({}, doc, linkedSource) : doc));
       } else {
-        setSales(getSales().map((item) => item.id === source.id ? Object.assign({}, item, linkedSource) : item));
+        setSales(getSales().map((doc) => doc.id === sourceDoc.id ? Object.assign({}, doc, linkedSource) : doc));
       }
       return copyReturn(returnRow);
     }
@@ -599,7 +671,11 @@
     function findVoidReversal(type, id) {
       const isPurchase = type === "purchase";
       const documentType = isPurchase ? "purchaseReturn" : "salesReturn";
-      const sourceId = Number(id);
+      // id may be a document header id (= first lineId)
+      const sourceDoc = isPurchase
+        ? findDocByLineId(getPurchases(), id)
+        : findDocByLineId(getSales(), id);
+      const sourceId = sourceDoc ? sourceDoc.id : Number(id);
       const found = getReturns().find((returnRow) =>
         returnRow.documentType === documentType &&
         returnRow.sourceLineId === sourceId &&
@@ -607,6 +683,8 @@
       );
       return found ? copyReturn(found) : null;
     }
+
+    // ── Adjustments / count / transfer ────────────────────────────────────
 
     function addStockAdjustment(input) {
       const adjustment = normalizeAdjustment(input, nextAdjustmentId());
@@ -682,48 +760,58 @@
       };
     }
 
+    // ── List functions ─────────────────────────────────────────────────────
+
     function listPurchases(options) {
       const filter = Object.assign({ query: "", month: "", includeVoided: false }, options);
       const query = normalizeText(filter.query).toLowerCase();
       return getPurchases()
-        .filter((purchase) => filter.includeVoided || !isVoidedDocument(purchase))
-        .filter((purchase) => !filter.month || purchase.date.slice(0, 7) === filter.month)
-        .filter((purchase) => {
+        .filter((doc) => filter.includeVoided || !isVoidedDocument(doc))
+        .filter((doc) => !filter.month || doc.date.slice(0, 7) === filter.month)
+        .filter((doc) => {
           if (!query) return true;
-          const product = findProduct(purchase.productId);
-          const warehouse = findWarehouse(purchase.warehouseId);
-          return [
-            product && product.sku, product && product.name,
+          const warehouse = findWarehouse(doc.warehouseId);
+          const lineMatches = Array.isArray(doc.lines) && doc.lines.some((line) => {
+            const product = findProduct(line.productId);
+            return [product && product.sku, product && product.name].some(
+              (value) => normalizeText(value).toLowerCase().includes(query)
+            );
+          });
+          return lineMatches || [
             warehouse && warehouse.code, warehouse && warehouse.name,
-            purchase.documentNo, purchase.sourceDocumentNo, purchase.reversalDocumentNo,
-            purchase.voidReason, purchase.voidedBy, purchase.supplier, purchase.note
+            doc.documentNo, doc.sourceDocumentNo, doc.reversalDocumentNo,
+            doc.voidReason, doc.voidedBy, doc.supplierName, doc.note
           ].some((value) => normalizeText(value).toLowerCase().includes(query));
         })
         .slice()
         .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id)
-        .map(copyPurchase);
+        .map(copyPurchaseDoc);
     }
 
     function listSales(options) {
       const filter = Object.assign({ query: "", month: "", includeVoided: false }, options);
       const query = normalizeText(filter.query).toLowerCase();
       return getSales()
-        .filter((sale) => filter.includeVoided || !isVoidedDocument(sale))
-        .filter((sale) => !filter.month || sale.date.slice(0, 7) === filter.month)
-        .filter((sale) => {
+        .filter((doc) => filter.includeVoided || !isVoidedDocument(doc))
+        .filter((doc) => !filter.month || doc.date.slice(0, 7) === filter.month)
+        .filter((doc) => {
           if (!query) return true;
-          const product = findProduct(sale.productId);
-          const warehouse = findWarehouse(sale.warehouseId);
-          return [
-            product && product.sku, product && product.name,
+          const warehouse = findWarehouse(doc.warehouseId);
+          const lineMatches = Array.isArray(doc.lines) && doc.lines.some((line) => {
+            const product = findProduct(line.productId);
+            return [product && product.sku, product && product.name].some(
+              (value) => normalizeText(value).toLowerCase().includes(query)
+            );
+          });
+          return lineMatches || [
             warehouse && warehouse.code, warehouse && warehouse.name,
-            sale.documentNo, sale.sourceDocumentNo, sale.reversalDocumentNo,
-            sale.voidReason, sale.voidedBy, sale.customer, sale.note
+            doc.documentNo, doc.sourceDocumentNo, doc.reversalDocumentNo,
+            doc.voidReason, doc.voidedBy, doc.customerName, doc.note
           ].some((value) => normalizeText(value).toLowerCase().includes(query));
         })
         .slice()
         .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id)
-        .map(copySale);
+        .map(copySaleDoc);
     }
 
     function listAdjustments(options) {

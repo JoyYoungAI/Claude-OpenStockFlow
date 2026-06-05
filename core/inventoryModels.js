@@ -33,7 +33,222 @@
     };
   }
 
-  // ── Transaction models ───────────────────────────────────────────────────────
+  // ── Purchase line ──────────────────────────────────────────────────────────
+
+  function copyPurchaseLine(line) {
+    return {
+      lineId: Number(line.lineId),
+      productId: Number(line.productId),
+      quantity: positiveNumber(line.quantity) || 0,
+      unitCost: nonNegativeNumber(line.unitCost) || 0,
+      receivedQuantity: nonNegativeNumber(line.receivedQuantity) || 0
+    };
+  }
+
+  // ── Sale line ──────────────────────────────────────────────────────────────
+
+  function copySaleLine(line) {
+    return {
+      lineId: Number(line.lineId),
+      productId: Number(line.productId),
+      quantity: positiveNumber(line.quantity) || 0,
+      unitPrice: nonNegativeNumber(line.unitPrice) || 0,
+      shippedQuantity: nonNegativeNumber(line.shippedQuantity) || 0,
+      costBasis: normalizeCostBasis(line.costBasis)
+    };
+  }
+
+  // ── Document header copy helpers ──────────────────────────────────────────
+
+  function copyDocumentHeader(doc) {
+    return {
+      id: Number(doc.id),
+      documentNo: normalizeText(doc.documentNo),
+      date: normalizeDate(doc.date),
+      warehouseId: Number(doc.warehouseId) || 0,
+      note: normalizeText(doc.note),
+      status: normalizeDocumentStatus(doc.status),
+      createdBy: normalizeText(doc.createdBy),
+      ownerEmployeeId: Number(doc.ownerEmployeeId) || 0,
+      ownerDepartmentId: Number(doc.ownerDepartmentId) || 0,
+      createdByEmployeeId: Number(doc.createdByEmployeeId) || 0,
+      lastEditedByEmployeeId: Number(doc.lastEditedByEmployeeId) || 0,
+      submittedBy: normalizeText(doc.submittedBy), submittedAt: normalizeText(doc.submittedAt),
+      approvedBy: normalizeText(doc.approvedBy), approvedAt: normalizeText(doc.approvedAt),
+      rejectedBy: normalizeText(doc.rejectedBy), rejectedAt: normalizeText(doc.rejectedAt),
+      rejectReason: normalizeText(doc.rejectReason),
+      confirmedBy: normalizeText(doc.confirmedBy), confirmedAt: normalizeText(doc.confirmedAt),
+      voidRequestedBy: normalizeText(doc.voidRequestedBy),
+      voidRequestedAt: normalizeText(doc.voidRequestedAt),
+      voidRequestReason: normalizeText(doc.voidRequestReason),
+      voidReason: normalizeText(doc.voidReason),
+      voidedAt: normalizeText(doc.voidedAt), voidedBy: normalizeText(doc.voidedBy),
+      sourceDocumentNo: normalizeText(doc.sourceDocumentNo),
+      reversalDocumentNo: normalizeText(doc.reversalDocumentNo),
+      relatedDocumentNos: normalizeDocumentNoList(doc.relatedDocumentNos)
+    };
+  }
+
+  function copyPurchaseDoc(doc) {
+    return Object.assign(copyDocumentHeader(doc), {
+      supplierId: Number(doc.supplierId) || 0,
+      supplierName: normalizeText(doc.supplierName),
+      createPayable: Boolean(doc.createPayable),
+      dueDate: normalizeDate(doc.dueDate),
+      lines: Array.isArray(doc.lines) ? doc.lines.map(copyPurchaseLine) : []
+    });
+  }
+
+  function copySaleDoc(doc) {
+    return Object.assign(copyDocumentHeader(doc), {
+      customerId: Number(doc.customerId) || 0,
+      customerName: normalizeText(doc.customerName),
+      commissionStatus: normalizeText(doc.commissionStatus),
+      createReceivable: Boolean(doc.createReceivable),
+      dueDate: normalizeDate(doc.dueDate),
+      lines: Array.isArray(doc.lines) ? doc.lines.map(copySaleLine) : []
+    });
+  }
+
+  // ── Flat record → document migration helpers ──────────────────────────────
+
+  function flatPurchaseToDoc(flat) {
+    const lineId = Number(flat.id);
+    const header = Object.assign(copyDocumentHeader(flat), {
+      id: lineId,
+      supplierId: Number(flat.supplierId) || 0,
+      // support both old `supplier` and new `supplierName` field names
+      supplierName: normalizeText(flat.supplierName || flat.supplier),
+      createPayable: Boolean(flat.createPayable),
+      dueDate: normalizeDate(flat.dueDate)
+    });
+    header.lines = [{
+      lineId,
+      productId: Number(flat.productId),
+      quantity: positiveNumber(flat.quantity) || 0,
+      unitCost: nonNegativeNumber(flat.unitCost) || 0,
+      receivedQuantity: nonNegativeNumber(flat.receivedQuantity) || 0
+    }];
+    return header;
+  }
+
+  function flatSaleToDoc(flat) {
+    const lineId = Number(flat.id);
+    const header = Object.assign(copyDocumentHeader(flat), {
+      id: lineId,
+      customerId: Number(flat.customerId) || 0,
+      // support both old `customer` and new `customerName` field names
+      customerName: normalizeText(flat.customerName || flat.customer),
+      commissionStatus: normalizeText(flat.commissionStatus),
+      createReceivable: Boolean(flat.createReceivable),
+      dueDate: normalizeDate(flat.dueDate)
+    });
+    header.lines = [{
+      lineId,
+      productId: Number(flat.productId),
+      quantity: positiveNumber(flat.quantity) || 0,
+      unitPrice: nonNegativeNumber(flat.unitPrice) || 0,
+      shippedQuantity: nonNegativeNumber(flat.shippedQuantity) || 0,
+      costBasis: normalizeCostBasis(flat.costBasis)
+    }];
+    return header;
+  }
+
+  // ── Group flat records into documents (for migration of multi-line orders) ──
+
+  function groupFlatPurchasesToDocs(flatRecords) {
+    const records = Array.isArray(flatRecords) ? flatRecords : [];
+    if (!records.length) { return []; }
+    // Group by documentNo (or individual if no documentNo)
+    const groups = new Map();
+    const order = [];
+    records.forEach((record) => {
+      const key = normalizeText(record.documentNo) || `__solo_${record.id}`;
+      if (!groups.has(key)) { groups.set(key, []); order.push(key); }
+      groups.get(key).push(record);
+    });
+    return order.map((key) => {
+      const group = groups.get(key).slice().sort((a, b) => Number(a.id) - Number(b.id));
+      const first = group[0];
+      const headerId = Number(first.id);
+      const header = Object.assign(copyDocumentHeader(first), {
+        id: headerId,
+        supplierId: Number(first.supplierId) || 0,
+        supplierName: normalizeText(first.supplierName || first.supplier),
+        createPayable: Boolean(first.createPayable),
+        dueDate: normalizeDate(first.dueDate)
+      });
+      header.lines = group.map((record) => ({
+        lineId: Number(record.id),
+        productId: Number(record.productId),
+        quantity: positiveNumber(record.quantity) || 0,
+        unitCost: nonNegativeNumber(record.unitCost) || 0,
+        receivedQuantity: nonNegativeNumber(record.receivedQuantity) || 0
+      }));
+      return header;
+    });
+  }
+
+  function groupFlatSalesToDocs(flatRecords) {
+    const records = Array.isArray(flatRecords) ? flatRecords : [];
+    if (!records.length) { return []; }
+    const groups = new Map();
+    const order = [];
+    records.forEach((record) => {
+      const key = normalizeText(record.documentNo) || `__solo_${record.id}`;
+      if (!groups.has(key)) { groups.set(key, []); order.push(key); }
+      groups.get(key).push(record);
+    });
+    return order.map((key) => {
+      const group = groups.get(key).slice().sort((a, b) => Number(a.id) - Number(b.id));
+      const first = group[0];
+      const headerId = Number(first.id);
+      const header = Object.assign(copyDocumentHeader(first), {
+        id: headerId,
+        customerId: Number(first.customerId) || 0,
+        customerName: normalizeText(first.customerName || first.customer),
+        commissionStatus: normalizeText(first.commissionStatus),
+        createReceivable: Boolean(first.createReceivable),
+        dueDate: normalizeDate(first.dueDate)
+      });
+      header.lines = group.map((record) => ({
+        lineId: Number(record.id),
+        productId: Number(record.productId),
+        quantity: positiveNumber(record.quantity) || 0,
+        unitPrice: nonNegativeNumber(record.unitPrice) || 0,
+        shippedQuantity: nonNegativeNumber(record.shippedQuantity) || 0,
+        costBasis: normalizeCostBasis(record.costBasis)
+      }));
+      return header;
+    });
+  }
+
+  // ── loadDocs: handles both flat and document arrays on init ──────────────
+
+  function loadPurchaseDocs(items) {
+    if (!Array.isArray(items) || !items.length) { return []; }
+    if (Array.isArray(items[0] && items[0].lines)) {
+      return items.map(copyPurchaseDoc);
+    }
+    // Check first item: if it has productId at top level, it's flat
+    if (items[0] && items[0].productId !== undefined) {
+      return groupFlatPurchasesToDocs(items);
+    }
+    return items.map(copyPurchaseDoc);
+  }
+
+  function loadSaleDocs(items) {
+    if (!Array.isArray(items) || !items.length) { return []; }
+    if (Array.isArray(items[0] && items[0].lines)) {
+      return items.map(copySaleDoc);
+    }
+    if (items[0] && items[0].productId !== undefined) {
+      return groupFlatSalesToDocs(items);
+    }
+    return items.map(copySaleDoc);
+  }
+
+  // ── Legacy flat-format functions (kept for migration + export name checks) ─
 
   function normalizePurchase(input, id) {
     const productId = Number(input && input.productId);
@@ -46,7 +261,7 @@
       warehouseId: Number(input && input.warehouseId) || 0,
       supplierId: Number(input && input.supplierId) || 0,
       quantity, unitCost,
-      supplier: normalizeText(input && input.supplier),
+      supplierName: normalizeText(input && (input.supplierName || input.supplier)),
       date, note: normalizeText(input && input.note),
       documentNo: normalizeText(input && input.documentNo),
       status: normalizeDocumentStatus(input && input.status),
@@ -84,7 +299,7 @@
       warehouseId: Number(input && input.warehouseId) || 0,
       customerId: Number(input && input.customerId) || 0,
       quantity, unitPrice,
-      customer: normalizeText(input && input.customer),
+      customerName: normalizeText(input && (input.customerName || input.customer)),
       date, note: normalizeText(input && input.note),
       documentNo: normalizeText(input && input.documentNo),
       status: normalizeDocumentStatus(input && input.status),
@@ -112,6 +327,19 @@
       commissionStatus: normalizeText(input && input.commissionStatus)
     };
   }
+
+  // copyPurchase / copySale are smart: handle both flat and document format
+  function copyPurchase(item) {
+    if (item && Array.isArray(item.lines)) { return copyPurchaseDoc(item); }
+    return flatPurchaseToDoc(item);
+  }
+
+  function copySale(item) {
+    if (item && Array.isArray(item.lines)) { return copySaleDoc(item); }
+    return flatSaleToDoc(item);
+  }
+
+  // ── Other transaction models (unchanged) ──────────────────────────────────
 
   function normalizeAdjustment(input, id) {
     const productId = Number(input && input.productId);
@@ -170,71 +398,6 @@
       confirmedBy: normalizeText(input && input.confirmedBy),
       relatedDocumentNos: normalizeDocumentNoList(input && input.relatedDocumentNos),
       status: normalizeDocumentStatus(input && input.status)
-    };
-  }
-
-  function copyPurchase(purchase) {
-    return {
-      id: Number(purchase.id), productId: Number(purchase.productId),
-      warehouseId: Number(purchase.warehouseId) || 0,
-      supplierId: Number(purchase.supplierId) || 0,
-      quantity: positiveNumber(purchase.quantity) || 0,
-      unitCost: nonNegativeNumber(purchase.unitCost) || 0,
-      supplier: normalizeText(purchase.supplier), date: normalizeDate(purchase.date),
-      note: normalizeText(purchase.note), documentNo: normalizeText(purchase.documentNo),
-      status: normalizeDocumentStatus(purchase.status),
-      createPayable: Boolean(purchase.createPayable), dueDate: normalizeDate(purchase.dueDate),
-      createdBy: normalizeText(purchase.createdBy),
-      ownerEmployeeId: Number(purchase.ownerEmployeeId) || 0,
-      ownerDepartmentId: Number(purchase.ownerDepartmentId) || 0,
-      createdByEmployeeId: Number(purchase.createdByEmployeeId) || 0,
-      lastEditedByEmployeeId: Number(purchase.lastEditedByEmployeeId) || 0,
-      submittedBy: normalizeText(purchase.submittedBy), submittedAt: normalizeText(purchase.submittedAt),
-      approvedBy: normalizeText(purchase.approvedBy), approvedAt: normalizeText(purchase.approvedAt),
-      rejectedBy: normalizeText(purchase.rejectedBy), rejectedAt: normalizeText(purchase.rejectedAt),
-      rejectReason: normalizeText(purchase.rejectReason),
-      confirmedBy: normalizeText(purchase.confirmedBy), confirmedAt: normalizeText(purchase.confirmedAt),
-      voidRequestedBy: normalizeText(purchase.voidRequestedBy),
-      voidRequestedAt: normalizeText(purchase.voidRequestedAt),
-      voidRequestReason: normalizeText(purchase.voidRequestReason),
-      voidReason: normalizeText(purchase.voidReason),
-      voidedAt: normalizeText(purchase.voidedAt), voidedBy: normalizeText(purchase.voidedBy),
-      sourceDocumentNo: normalizeText(purchase.sourceDocumentNo),
-      reversalDocumentNo: normalizeText(purchase.reversalDocumentNo),
-      relatedDocumentNos: normalizeDocumentNoList(purchase.relatedDocumentNos)
-    };
-  }
-
-  function copySale(sale) {
-    return {
-      id: Number(sale.id), productId: Number(sale.productId),
-      warehouseId: Number(sale.warehouseId) || 0,
-      customerId: Number(sale.customerId) || 0,
-      quantity: positiveNumber(sale.quantity) || 0,
-      unitPrice: nonNegativeNumber(sale.unitPrice) || 0,
-      customer: normalizeText(sale.customer), date: normalizeDate(sale.date),
-      note: normalizeText(sale.note), documentNo: normalizeText(sale.documentNo),
-      status: normalizeDocumentStatus(sale.status),
-      costBasis: normalizeCostBasis(sale.costBasis),
-      createReceivable: Boolean(sale.createReceivable), dueDate: normalizeDate(sale.dueDate),
-      createdBy: normalizeText(sale.createdBy),
-      ownerEmployeeId: Number(sale.ownerEmployeeId) || 0,
-      ownerDepartmentId: Number(sale.ownerDepartmentId) || 0,
-      createdByEmployeeId: Number(sale.createdByEmployeeId) || 0,
-      lastEditedByEmployeeId: Number(sale.lastEditedByEmployeeId) || 0,
-      submittedBy: normalizeText(sale.submittedBy), submittedAt: normalizeText(sale.submittedAt),
-      approvedBy: normalizeText(sale.approvedBy), approvedAt: normalizeText(sale.approvedAt),
-      rejectedBy: normalizeText(sale.rejectedBy), rejectedAt: normalizeText(sale.rejectedAt),
-      rejectReason: normalizeText(sale.rejectReason),
-      confirmedBy: normalizeText(sale.confirmedBy), confirmedAt: normalizeText(sale.confirmedAt),
-      voidRequestedBy: normalizeText(sale.voidRequestedBy),
-      voidRequestedAt: normalizeText(sale.voidRequestedAt),
-      voidRequestReason: normalizeText(sale.voidRequestReason),
-      voidReason: normalizeText(sale.voidReason),
-      voidedAt: normalizeText(sale.voidedAt), voidedBy: normalizeText(sale.voidedBy),
-      sourceDocumentNo: normalizeText(sale.sourceDocumentNo),
-      reversalDocumentNo: normalizeText(sale.reversalDocumentNo),
-      relatedDocumentNos: normalizeDocumentNoList(sale.relatedDocumentNos)
     };
   }
 
@@ -327,6 +490,10 @@
     {
       normalizePurchase, normalizeSale, normalizeAdjustment, normalizeTransfer, normalizeReturn,
       copyPurchase, copySale, copyAdjustment, copyTransfer, copyReturn,
+      copyPurchaseDoc, copySaleDoc, copyPurchaseLine, copySaleLine,
+      flatPurchaseToDoc, flatSaleToDoc,
+      loadPurchaseDocs, loadSaleDocs,
+      groupFlatPurchasesToDocs, groupFlatSalesToDocs,
       defaultPreferences, normalizePreferences,
       defaultWarehouse, ensureWarehouseOnRow,
       normalizeDocumentStatus, normalizeDocumentNoList

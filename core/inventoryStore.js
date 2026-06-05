@@ -10,6 +10,10 @@
     copyWarehouse,
     copyPurchase,
     copySale,
+    copyPurchaseDoc,
+    copySaleDoc,
+    loadPurchaseDocs,
+    loadSaleDocs,
     copyAdjustment,
     copyTransfer,
     copyReturn,
@@ -27,9 +31,9 @@
     let products = Array.isArray(initialState && initialState.products)
       ? initialState.products.map(copyProductLocal) : [];
     let purchases = Array.isArray(initialState && initialState.purchases)
-      ? initialState.purchases.map(copyPurchase) : [];
+      ? loadPurchaseDocs(initialState.purchases) : [];
     let sales = Array.isArray(initialState && initialState.sales)
-      ? initialState.sales.map(copySale) : [];
+      ? loadSaleDocs(initialState.sales) : [];
     let partners = Array.isArray(initialState && initialState.partners)
       ? initialState.partners.map(copyPartner) : [];
     let departments = Array.isArray(initialState && initialState.departments)
@@ -89,7 +93,7 @@
     let _nextPaymentId = nextId(payments);
     let _nextAuditId = nextId(auditLogs);
 
-    // ── Helper: local copyProduct (same logic as original) ───────────────────
+    // ── Helper: local copyProduct ────────────────────────────────────────────
     function copyProductLocal(product) {
       const { nonNegativeNumber } = global.OpenStockFlowUtils || {};
       const nnn = nonNegativeNumber || function (v) {
@@ -100,7 +104,7 @@
         id: Number(product.id),
         sku: normalizeText(product.sku).toUpperCase(),
         name: normalizeText(product.name),
-        category: normalizeText(product.category) || "未分類",
+        categoryId: Number(product.categoryId) || 0,
         unit: normalizeText(product.unit) || "件",
         cost: nnn(product.cost) || 0,
         price: nnn(product.price) || 0,
@@ -418,8 +422,8 @@
         payments: payments.map(copyPayment),
         auditLogs: auditLogs.map(copyAuditLog),
         preferences: Object.assign({}, preferences),
-        purchases: purchases.map(copyPurchase),
-        sales: sales.map(copySale)
+        purchases: purchases.map(copyPurchaseDoc),
+        sales: sales.map(copySaleDoc)
       };
     }
 
@@ -620,7 +624,13 @@
   }
 
   function nextId(items) {
-    return items.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1;
+    return items.reduce((max, item) => {
+      const headerMax = Number(item.id) || 0;
+      if (Array.isArray(item.lines)) {
+        return Math.max(max, item.lines.reduce((m, l) => Math.max(m, Number(l.lineId) || 0), headerMax));
+      }
+      return Math.max(max, headerMax);
+    }, 0) + 1;
   }
 
   global.createInventoryStore = createInventoryStore;

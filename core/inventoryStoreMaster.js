@@ -42,7 +42,7 @@
       const { nonNegativeNumber } = utils;
       const sku = normalizeText(input && input.sku).toUpperCase();
       const name = normalizeText(input && input.name);
-      const category = normalizeText(input && input.category) || "未分類";
+      const categoryId = Number(input && input.categoryId) || 0;
       const unit = normalizeText(input && input.unit) || "件";
       const cost = nonNegativeNumber(input && input.cost);
       const price = nonNegativeNumber(input && input.price);
@@ -51,7 +51,7 @@
         return null;
       }
       return {
-        id, sku, name, category, unit, cost, price, safetyStock,
+        id, sku, name, categoryId, unit, cost, price, safetyStock,
         active: input && input.active === false ? false : true
       };
     }
@@ -63,7 +63,7 @@
         id: Number(product.id),
         sku: normalizeText(product.sku).toUpperCase(),
         name: normalizeText(product.name),
-        category: normalizeText(product.category) || "未分類",
+        categoryId: Number(product.categoryId) || 0,
         unit: normalizeText(product.unit) || "件",
         cost: nonNegativeNumber(product.cost) || 0,
         price: nonNegativeNumber(product.price) || 0,
@@ -246,10 +246,10 @@
       const query = (nt || normalizeText)(filter.query).toLowerCase();
       return getProducts()
         .filter((product) => !filter.activeOnly || product.active)
-        .filter((product) => !filter.category || product.category === filter.category)
+        .filter((product) => !filter.category || String(product.categoryId) === String(filter.category))
         .filter((product) => {
           if (!query) return true;
-          return [product.sku, product.name, product.category]
+          return [product.sku, product.name]
             .some((value) => normalizeText(value).toLowerCase().includes(query));
         })
         .slice()
@@ -359,11 +359,10 @@
     }
 
     function categories() {
-      const categoryNames = getProductCategories()
+      return getProductCategories()
         .filter((category) => category.active)
         .map((category) => category.name)
-        .concat(getProducts().map((product) => product.category));
-      return Array.from(new Set(categoryNames)).filter(Boolean).sort((a, b) => a.localeCompare(b));
+        .sort((a, b) => a.localeCompare(b));
     }
 
     return {

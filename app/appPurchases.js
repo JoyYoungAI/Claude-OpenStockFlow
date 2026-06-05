@@ -96,23 +96,40 @@ function renderPurchaseReturns() {
 function renderPurchases() {
   const purchases = store.listPurchases({ query: purchaseQuery.value, month: purchaseMonth.value, includeVoided: purchaseIncludeVoided.checked });
   document.querySelector("#purchase-count").textContent = `${formatCount(purchases.length)} ${t("common.countUnit", "筆")}`;
+  const allReturns = store.listReturns({ documentType: "purchaseReturn" });
   document.querySelector("#purchase-list").innerHTML = purchases.length
-    ? purchases.map((item) => `
-      <article class="record-card">
-        <div>
-          <strong>${escapeHtml(productName(item.productId))} ${documentStatusBadge(item)}</strong>
-          <div class="record-meta">${escapeHtml(item.documentNo || t("common.noDocumentNo", "無單號"))} / ${formatDate(item.date)} / ${escapeHtml(warehouseName(item.warehouseId))} / ${item.supplier ? escapeHtml(item.supplier) : `<span class="text-danger">${t("common.notFilled", "未填")}${t("common.supplier", "供應商")}</span>`} /${escapeHtml(documentResponsibilityText(item))} / ${escapeHtml(item.note || t("common.noNote", "無備註"))}${returnMeta(item, "purchaseReturn")}${voidMeta(item)}</div>
-          ${voidDetailPanel(item, "purchase")}
-        </div>
-        <div class="record-side">
-          <span class="amount income">+${formatQuantity(item.quantity)} / ${formatRestrictedMoney(item.quantity * item.unitCost, "viewCost")}</span>
-          ${returnDocumentButton(item, "purchase")}
-          ${voidReversalButton(item, "purchase")}
-          ${reassignDocumentOwnerButton(item, "purchase")}
-          ${documentWorkflowButtons(item, "purchase")}
-          ${voidDocumentButton(item, "purchase")}
-        </div>
-      </article>
-    `).join("")
+    ? purchases.map((doc) => {
+      const supplierDisplay = doc.supplierName
+        ? escapeHtml(doc.supplierName)
+        : `<span class="text-danger">${t("common.notFilled", "未填")}${t("common.supplier", "供應商")}</span>`;
+      const lines = doc.lines || [];
+      const linesTotal = lines.reduce((sum, l) => sum + l.quantity * l.unitCost, 0);
+      const linesHtml = lines.map((line) => {
+        const returned = allReturns.filter((r) => r.sourceLineId === line.lineId).reduce((s, r) => s + r.quantity, 0);
+        const remaining = line.quantity - returned;
+        const canReturn = !isVoidedDocument(doc) && ["confirmed", "amended", "voidRequested"].includes(doc.status || "confirmed") && canPerform("createPurchaseReturn", { targetDocument: doc });
+        const returnBtn = canReturn && remaining > 0
+          ? `<button class="text-button" type="button" data-return-purchase-id="${line.lineId}" title="${escapeAttr(t("tooltips.purchaseReturn", "建立進貨退貨，會扣回庫存並調整應付。"))}">${t("actions.createReturn", "退貨")}</button>`
+          : canReturn ? `<button class="text-button" type="button" disabled title="${escapeAttr(t("tooltips.returnCompleted", "此單據已無可退數量。"))}">${t("actions.createReturn", "退貨")}</button>` : "";
+        return `<div class="record-meta">${escapeHtml(productName(line.productId))} × ${formatQuantity(line.quantity)} / ${formatRestrictedMoney(line.unitCost, "viewCost")}${returned ? ` / ${t("documentStatus.returnedQuantity", "已退")} ${formatQuantity(returned)}` : ""} ${returnBtn}</div>`;
+      }).join("");
+      return `
+        <article class="record-card">
+          <div>
+            <strong>${escapeHtml(doc.documentNo || t("common.noDocumentNo", "無單號"))} ${documentStatusBadge(doc)}</strong>
+            <div class="record-meta">${formatDate(doc.date)} / ${escapeHtml(warehouseName(doc.warehouseId))} / ${supplierDisplay} / ${escapeHtml(documentResponsibilityText(doc))} / ${escapeHtml(doc.note || t("common.noNote", "無備註"))}${voidMeta(doc)}</div>
+            ${linesHtml}
+            ${voidDetailPanel(doc, "purchase")}
+          </div>
+          <div class="record-side">
+            <span class="amount income">+${formatRestrictedMoney(linesTotal, "viewCost")}</span>
+            ${voidReversalButton(doc, "purchase")}
+            ${reassignDocumentOwnerButton(doc, "purchase")}
+            ${documentWorkflowButtons(doc, "purchase")}
+            ${voidDocumentButton(doc, "purchase")}
+          </div>
+        </article>
+      `;
+    }).join("")
     : `<div class="empty">${t("emptyStates.noPurchases", "尚無進貨紀錄。")}</div>`;
 }

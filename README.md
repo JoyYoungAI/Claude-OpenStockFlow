@@ -4,6 +4,8 @@
 
 **[線上 Demo](https://joyyoungai.github.io/OpenStockFlow/)**
 
+> 本版遷移由 Codex 實作與驗證；Claude hook 已退役，不再作為日常流程。
+
 ## 快速使用
 
 直接開啟線上 Demo，或下載後用瀏覽器開啟 `index.html`。
@@ -53,3 +55,25 @@ inventoryUtils.js        工具函式
 | v1.8.0  | 採購單／銷售單多明細 |
 | v1.7.0  | 往來對象主檔 |
 | v1.0.0  | 第一版：進貨、銷售、庫存報表 |
+
+## Current runtime layout
+
+Updated 2026-06-04.
+
+```text
+index.html              browser entry and sequential script loader
+styles.css              global styles
+
+core/                   data models, reports, store, storage
+services/               access control, audit, backup
+ui/                     i18n, messages, renderers, master-data UI widgets
+app/                    app event handlers, shared app UI helpers, seed data
+esm/                    no-build ESM parity modules, not used by browser loader yet
+```
+
+Tests still run from the repository root:
+
+```bash
+node inventoryStore.test.js
+node inventoryEsm.test.mjs
+```

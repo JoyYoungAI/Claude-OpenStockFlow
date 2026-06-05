@@ -6,6 +6,7 @@ function bindMasterHandlers() {
     if (!requireAction("manageProducts")) { return; }
     const data = Object.fromEntries(new FormData(productForm));
     const wasEditing = Boolean(editingProductId);
+    data.categoryId = data.category;
     const product = wasEditing ? store.updateProduct(editingProductId, data) : store.addProduct(data);
     if (!product) { setStatus(OpenStockFlowMessages.message("productSaveFailed"), true); return; }
     if (product.error === "DUPLICATE_SKU") { setStatus(OpenStockFlowMessages.message("duplicateSku"), true); return; }
@@ -13,7 +14,7 @@ function bindMasterHandlers() {
       entityType: "product", entityId: product.id,
       summary: `${wasEditing ? "更新" : "新增"}商品：${product.name}`,
       before: wasEditing ? { productId: editingProductId } : {},
-      after: { sku: product.sku, name: product.name, category: product.category, cost: product.cost, price: product.price },
+      after: { sku: product.sku, name: product.name, categoryId: product.categoryId, cost: product.cost, price: product.price },
       riskLevel: wasEditing ? "high" : "medium"
     });
     resetProductForm();
@@ -266,7 +267,7 @@ function renderProducts() {
       <tr>
         <td>${escapeHtml(product.sku)}</td>
         <td><div class="row-title"><strong>${escapeHtml(product.name)}</strong><span>${escapeHtml(product.unit)}</span></div></td>
-        <td>${escapeHtml(product.category)}</td>
+        <td>${escapeHtml(categoryName(product.categoryId))}</td>
         <td>${formatRestrictedMoney(product.cost, "viewCost")}</td>
         <td>${formatRestrictedMoney(product.price, "viewPrice")}</td>
         <td>${statusBadge(product.active)}</td>
@@ -286,7 +287,7 @@ function startProductEdit(productId) {
   productForm.elements.id.value = product.id;
   productForm.elements.sku.value = product.sku;
   productForm.elements.name.value = product.name;
-  productForm.elements.category.value = product.category;
+  productForm.elements.category.value = String(product.categoryId || 0);
   productForm.elements.unit.value = product.unit;
   productForm.elements.cost.value = product.cost;
   productForm.elements.price.value = product.price;
@@ -301,7 +302,8 @@ function resetProductForm() {
   editingProductId = null;
   productForm.reset();
   productForm.elements.id.value = "";
-  productForm.elements.category.value = store.categories()[0] || "一般";
+  const firstCat = store.listProductCategories({ activeOnly: true })[0];
+  productForm.elements.category.value = firstCat ? String(firstCat.id) : "0";
   productForm.elements.unit.value = "件";
   productForm.elements.safetyStock.value = "5";
   productFormTitle.textContent = t("actions.addProduct", "新增商品");
@@ -351,11 +353,11 @@ function renderProductCategoryOptions() { masterDataUi.renderProductCategoryOpti
 
 function renderCategorySelect(select, emptyLabel) {
   const current = select.value;
-  const categories = store.categories();
-  const options = [`<option value="">${escapeHtml(emptyLabel)}</option>`]
-    .concat(categories.map((category) => `<option value="${escapeAttr(category)}">${escapeHtml(category)}</option>`));
-  select.innerHTML = options.join("");
-  select.value = categories.includes(current) ? current : "";
+  const categories = store.listProductCategories({ activeOnly: true });
+  const opts = [`<option value="">${escapeHtml(emptyLabel)}</option>`]
+    .concat(categories.map((cat) => `<option value="${escapeAttr(String(cat.id))}">${escapeHtml(cat.name)}</option>`));
+  select.innerHTML = opts.join("");
+  select.value = categories.some((cat) => String(cat.id) === current) ? current : "";
 }
 
 function renderWarehouseFilter(select, emptyLabel) {

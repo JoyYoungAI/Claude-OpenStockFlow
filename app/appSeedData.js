@@ -40,9 +40,9 @@ const seedState = {
     { id: 4, code: "INSPECT", name: "待驗區", type: "inspection", note: "客戶歸還後，倉庫確認前暫存", active: true }
   ],
   products: [
-    { id: 1, sku: "P-COF-001", name: "精品咖啡豆", category: "食品", unit: "包", cost: 260, price: 450, safetyStock: 5, active: true },
-    { id: 2, sku: "P-MUG-002", name: "陶瓷馬克杯", category: "用品", unit: "個", cost: 120, price: 280, safetyStock: 8, active: true },
-    { id: 3, sku: "P-TEA-003", name: "冷泡茶包", category: "食品", unit: "盒", cost: 95, price: 180, safetyStock: 10, active: true }
+    { id: 1, sku: "P-COF-001", name: "精品咖啡豆", categoryId: 1, unit: "包", cost: 260, price: 450, safetyStock: 5, active: true },
+    { id: 2, sku: "P-MUG-002", name: "陶瓷馬克杯", categoryId: 2, unit: "個", cost: 120, price: 280, safetyStock: 8, active: true },
+    { id: 3, sku: "P-TEA-003", name: "冷泡茶包", categoryId: 1, unit: "盒", cost: 95, price: 180, safetyStock: 10, active: true }
   ],
   partners: [
     { id: 1, role: "supplier", name: "咖啡供應商", contact: "林小姐", phone: "02-2345-1000", note: "咖啡豆主要來源", active: true },
