@@ -792,6 +792,101 @@ assert.equal(models.docReturnStatus(null, []).status, "none", "docReturnStatus: 
   assert.ok(purchaseDoc.relatedDocumentNos.includes("PRTN-202606-001"), "purchase relatedDocumentNos includes return doc");
 }
 
+// ── Bug fix: removeSale 後 cost layers 應回補 ─────────────────────────────────
+{
+  const saleVoidLayerStore = createInventoryStore({
+    products: [{ id: 1, sku: "SV01", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+    purchases: [], sales: []
+  });
+  saleVoidLayerStore.addPurchaseOrder({ supplier: "S", date: "2026-04-01", items: [{ productId: 1, quantity: 10, unitCost: 100 }] });
+  assert.equal(saleVoidLayerStore.listCostLayers()[0].remainingQuantity, 10, "SVL: 進貨後 layer 全量");
+  const svlSale = saleVoidLayerStore.addSaleOrder({ customer: "C", date: "2026-04-02", items: [{ productId: 1, quantity: 4, unitPrice: 200 }] });
+  assert.equal(saleVoidLayerStore.listCostLayers()[0].remainingQuantity, 6, "SVL: 銷貨後 layer 減 4");
+  saleVoidLayerStore.removeSale(svlSale.id, { reason: "Cancelled", user: "Test" });
+  assert.equal(saleVoidLayerStore.listCostLayers()[0].remainingQuantity, 10, "SVL: 銷貨作廢後 layer 回補至 10");
+  assert.equal(saleVoidLayerStore.inventoryReport().find((r) => r.productId === 1).onHand, 10, "SVL: 庫存回到 10");
+}
+
+// ── Bug fix: transitionSale("confirm") 應消費 cost layers ────────────────────
+{
+  const transitionLayerStore = createInventoryStore({
+    products: [{ id: 1, sku: "TL01", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+    purchases: [], sales: []
+  });
+  transitionLayerStore.addPurchaseOrder({ supplier: "S", date: "2026-05-01", items: [{ productId: 1, quantity: 10, unitCost: 100 }] });
+  assert.equal(transitionLayerStore.listCostLayers()[0].remainingQuantity, 10, "TL: 草稿銷貨前 layer 全量");
+  const tlDraftSale = transitionLayerStore.addSaleOrder({ customer: "C", date: "2026-05-02", status: "draft", items: [{ productId: 1, quantity: 3, unitPrice: 200 }] });
+  assert.equal(transitionLayerStore.listCostLayers()[0].remainingQuantity, 10, "TL: 草稿銷貨不消費 layer");
+  transitionLayerStore.transitionSale(tlDraftSale.id, "submit", { user: "Sales" });
+  assert.equal(transitionLayerStore.listCostLayers()[0].remainingQuantity, 10, "TL: submit 不消費 layer");
+  transitionLayerStore.transitionSale(tlDraftSale.id, "approve", { user: "Manager" });
+  assert.equal(transitionLayerStore.listCostLayers()[0].remainingQuantity, 10, "TL: approve 不消費 layer");
+  transitionLayerStore.transitionSale(tlDraftSale.id, "confirm", { user: "Manager" });
+  assert.equal(transitionLayerStore.listCostLayers()[0].remainingQuantity, 7, "TL: confirm 後 layer 減 3");
+  assert.equal(transitionLayerStore.inventoryReport().find((r) => r.productId === 1).onHand, 7, "TL: 庫存減 3");
+}
+
+// ── Bug fix: createVoidReversal 多品項單應建立多筆回沖 ────────────────────────
+{
+  const multiLineRevStore = createInventoryStore({
+    products: [
+      { id: 1, sku: "M01", name: "Item A", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true },
+      { id: 2, sku: "M02", name: "Item B", category: "Food", unit: "pc", cost: 50, price: 100, safetyStock: 0, active: true }
+    ],
+    purchases: [], sales: []
+  });
+  const mlPO = multiLineRevStore.addPurchaseOrder({
+    supplier: "S", date: "2026-06-01",
+    items: [{ productId: 1, quantity: 3, unitCost: 100 }, { productId: 2, quantity: 5, unitCost: 50 }]
+  });
+  multiLineRevStore.removePurchase(mlPO.id, { reason: "Wrong order", user: "Test" });
+  const mlReversal = multiLineRevStore.createVoidReversal("purchase", mlPO.id, { user: "Test" });
+  assert.match(mlReversal.documentNo, /^PRTN-/, "多品項回沖文件號前綴 PRTN");
+  const allReturns = multiLineRevStore.listReturns({ documentType: "purchaseReturn" });
+  assert.equal(allReturns.filter((r) => r.documentNo === mlReversal.documentNo).length, 2, "兩品項各一筆回沖");
+  assert.ok(allReturns.some((r) => r.productId === 1 && r.quantity === 3), "品項 1 回沖正確");
+  assert.ok(allReturns.some((r) => r.productId === 2 && r.quantity === 5), "品項 2 回沖正確");
+  assert.equal(multiLineRevStore.findVoidReversal("purchase", mlPO.id).documentNo, mlReversal.documentNo, "findVoidReversal 仍可找到");
+}
+
+// ── Bug fix: removePurchase 多品項單所有商品 cost 回補 ────────────────────────
+{
+  const multiLineCostStore = createInventoryStore({
+    products: [
+      { id: 1, sku: "MC01", name: "Item A", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true },
+      { id: 2, sku: "MC02", name: "Item B", category: "Food", unit: "pc", cost: 50, price: 100, safetyStock: 0, active: true }
+    ],
+    purchases: [], sales: []
+  });
+  multiLineCostStore.addPurchaseOrder({ supplier: "S1", date: "2026-07-01", items: [{ productId: 1, quantity: 5, unitCost: 200 }, { productId: 2, quantity: 3, unitCost: 80 }] });
+  const mlcPO2 = multiLineCostStore.addPurchaseOrder({ supplier: "S2", date: "2026-07-02", items: [{ productId: 1, quantity: 2, unitCost: 300 }, { productId: 2, quantity: 1, unitCost: 120 }] });
+  assert.equal(multiLineCostStore.listProducts().find((p) => p.id === 1).cost, 300, "MLC: 商品1 成本更新");
+  assert.equal(multiLineCostStore.listProducts().find((p) => p.id === 2).cost, 120, "MLC: 商品2 成本更新");
+  multiLineCostStore.removePurchase(mlcPO2.id, { reason: "test", user: "test" });
+  assert.equal(multiLineCostStore.listProducts().find((p) => p.id === 1).cost, 200, "MLC: 商品1 成本回補");
+  assert.equal(multiLineCostStore.listProducts().find((p) => p.id === 2).cost, 80, "MLC: 商品2 成本回補");
+}
+
+// ── Bug fix: copyAdjustment / copyTransfer 包含 status / createdBy ────────────
+{
+  const metaStore = createInventoryStore({
+    products: [{ id: 1, sku: "AD01", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+    warehouses: [
+      { id: 1, code: "A", name: "WH-A", type: "warehouse", note: "", active: true },
+      { id: 2, code: "B", name: "WH-B", type: "warehouse", note: "", active: true }
+    ],
+    purchases: [], sales: []
+  });
+  metaStore.addPurchase({ productId: 1, warehouseId: 1, quantity: 10, unitCost: 100, supplier: "S", date: "2026-08-01" });
+  const adj = metaStore.addStockAdjustment({ productId: 1, warehouseId: 1, quantity: -2, reason: "Shrinkage", date: "2026-08-02", createdBy: "Manager", createdByEmployeeId: 5 });
+  assert.equal(adj.status, "confirmed", "copyAdjustment 包含 status");
+  assert.equal(adj.createdBy, "Manager", "copyAdjustment 包含 createdBy");
+  assert.equal(adj.createdByEmployeeId, 5, "copyAdjustment 包含 createdByEmployeeId");
+  assert.equal(metaStore.listAdjustments({})[0].status, "confirmed", "listAdjustments 回傳 status");
+  const trf = metaStore.addTransferOrder({ fromWarehouseId: 1, toWarehouseId: 2, date: "2026-08-03", items: [{ productId: 1, quantity: 3 }] });
+  assert.equal(metaStore.listTransfers({})[0].status, "confirmed", "copyTransfer 包含 status");
+}
+
 console.log("All tests passed.");
 
 console.log("inventoryStore tests passed");

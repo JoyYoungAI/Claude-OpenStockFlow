@@ -83,7 +83,9 @@
         adjustments: withDefaultWarehouse(rawState.adjustments, migratedWarehouseId),
         transfers: withDefaultTransferWarehouses(rawState.transfers, migratedWarehouseId),
         returns: withDefaultReturnUnitPrice(withDefaultStatus(withDefaultWarehouse(rawState.returns, migratedWarehouseId), "confirmed")),
-        costLayers: Array.isArray(rawState.costLayers) ? rawState.costLayers : [],
+        costLayers: (Array.isArray(rawState.costLayers) ? rawState.costLayers : []).map((layer) =>
+          layer && !layer.warehouseId ? Object.assign({}, layer, { warehouseId: migratedWarehouseId }) : layer
+        ),
         receivables: Array.isArray(rawState.receivables) ? rawState.receivables : [],
         payables: Array.isArray(rawState.payables) ? rawState.payables : [],
         payments: Array.isArray(rawState.payments) ? rawState.payments : [],

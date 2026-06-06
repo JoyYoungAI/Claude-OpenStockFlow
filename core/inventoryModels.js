@@ -408,7 +408,10 @@
       quantity: Math.round(Number(adjustment.quantity)) || 0,
       reason: normalizeText(adjustment.reason) || "調整",
       date: normalizeDate(adjustment.date), note: normalizeText(adjustment.note),
-      documentNo: normalizeText(adjustment.documentNo)
+      documentNo: normalizeText(adjustment.documentNo),
+      status: normalizeDocumentStatus(adjustment.status),
+      createdBy: normalizeText(adjustment.createdBy),
+      createdByEmployeeId: Number(adjustment.createdByEmployeeId) || 0
     };
   }
 
@@ -419,7 +422,10 @@
       toWarehouseId: Number(transfer.toWarehouseId),
       quantity: positiveNumber(transfer.quantity) || 0,
       date: normalizeDate(transfer.date), note: normalizeText(transfer.note),
-      documentNo: normalizeText(transfer.documentNo)
+      documentNo: normalizeText(transfer.documentNo),
+      status: normalizeDocumentStatus(transfer.status),
+      createdBy: normalizeText(transfer.createdBy),
+      createdByEmployeeId: Number(transfer.createdByEmployeeId) || 0
     };
   }
 

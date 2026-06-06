@@ -145,6 +145,19 @@
       }).reverse());
     }
 
+    function restoreCostLayers(productId, warehouseId, quantity) {
+      let toRestore = quantity;
+      setCostLayers(getCostLayers().slice().reverse().map((layer) => {
+        if (layer.productId !== Number(productId) || layer.warehouseId !== Number(warehouseId) || toRestore <= 0) {
+          return layer;
+        }
+        const consumed = layer.quantity - layer.remainingQuantity;
+        const restored = Math.min(consumed, toRestore);
+        toRestore -= restored;
+        return Object.assign({}, layer, { remainingQuantity: layer.remainingQuantity + restored });
+      }).reverse());
+    }
+
     function createCostBasis(productId, quantity, capturedAt) {
       const product = findProduct(productId);
       const unitCost = product ? product.cost : 0;
@@ -433,13 +446,16 @@
           ? Object.assign({}, layer, { remainingQuantity: 0 })
           : layer
       ));
-      const latestEffectivePurchase = getPurchases().find(
-        (d) => Array.isArray(d.lines) && d.lines.some((l) => l.productId === doc.lines[0].productId) && isDocumentEffective(d)
-      );
-      if (latestEffectivePurchase) {
-        const latestLine = latestEffectivePurchase.lines.find((l) => l.productId === doc.lines[0].productId);
-        if (latestLine) setProductsCost(doc.lines[0].productId, latestLine.unitCost);
-      }
+      const uniqueProductIds = [...new Set((doc.lines || []).map((l) => l.productId))];
+      uniqueProductIds.forEach((pid) => {
+        const latestDoc = getPurchases().find(
+          (d) => Array.isArray(d.lines) && d.lines.some((l) => l.productId === pid) && isDocumentEffective(d)
+        );
+        if (latestDoc) {
+          const latestLine = latestDoc.lines.find((l) => l.productId === pid);
+          if (latestLine) setProductsCost(pid, latestLine.unitCost);
+        }
+      });
       return true;
     }
 
@@ -455,6 +471,9 @@
           commissionStatus: item.commissionStatus ? "voided" : item.commissionStatus
         }) : item));
       voidReceivablesForDocument(doc.documentNo, voidInfo);
+      if (isDocumentEffective(doc) && Array.isArray(doc.lines)) {
+        doc.lines.forEach((line) => restoreCostLayers(line.productId, doc.warehouseId, line.quantity));
+      }
       return true;
     }
 
@@ -504,7 +523,10 @@
           });
         }));
         const confirmedDoc = getSales().find((d) => d.id === doc.id);
-        if (confirmedDoc) applySaleOrderEffects(confirmedDoc);
+        if (confirmedDoc) {
+          confirmedDoc.lines.forEach((line) => consumeCostLayers(line.productId, confirmedDoc.warehouseId, line.quantity));
+          applySaleOrderEffects(confirmedDoc);
+        }
       }
       return result.lines.map(copySaleDoc);
     }
@@ -715,33 +737,38 @@
       if (!sourceDoc || !isVoidedDocument(sourceDoc)) return null;
       const existing = findVoidReversal(type, sourceDoc.id);
       if (existing) return existing;
-      const firstLine = Array.isArray(sourceDoc.lines) && sourceDoc.lines[0];
-      if (!firstLine) return null;
+      const lines = Array.isArray(sourceDoc.lines) ? sourceDoc.lines : [];
+      if (!lines.length) return null;
       const date = sourceDoc.voidedAt ? sourceDoc.voidedAt.slice(0, 10) : todayString();
       const documentType = isPurchase ? "purchaseReturn" : "salesReturn";
       const documentNo = nextDocumentNo(isPurchase ? "PRTN" : "SRTN", date, getReturns());
       const user = normalizeText(options && options.user) || sourceDoc.voidedBy || "本機使用者";
-      const returnRow = normalizeReturn({
-        documentType,
-        documentNo,
-        sourceDocumentNo: sourceDoc.documentNo,
-        sourceLineId: sourceDoc.id,  // header.id === first lineId
-        productId: firstLine.productId,
-        warehouseId: sourceDoc.warehouseId,
-        quantity: firstLine.quantity,
-        unitPrice: isPurchase ? firstLine.unitCost : firstLine.unitPrice,
-        costBasis: firstLine.costBasis,
-        reason: `作廢沖銷：${sourceDoc.voidReason || "未填寫作廢原因"}`,
-        date,
-        inspectionStatus: "reversal",
-        createdBy: user,
-        confirmedBy: user,
-        relatedDocumentNos: [sourceDoc.documentNo],
-        status: "reversed"
-      }, nextReturnId());
-      if (!returnRow) return null;
-      incNextReturnId();
-      setReturns([returnRow].concat(getReturns()));
+      const reason = `作廢沖銷：${sourceDoc.voidReason || "未填寫作廢原因"}`;
+      const returnRows = lines.map((line) => {
+        const returnRow = normalizeReturn({
+          documentType,
+          documentNo,
+          sourceDocumentNo: sourceDoc.documentNo,
+          sourceLineId: line.lineId,
+          productId: line.productId,
+          warehouseId: sourceDoc.warehouseId,
+          quantity: line.quantity,
+          unitPrice: isPurchase ? line.unitCost : line.unitPrice,
+          costBasis: line.costBasis,
+          reason,
+          date,
+          inspectionStatus: "reversal",
+          createdBy: user,
+          confirmedBy: user,
+          relatedDocumentNos: [sourceDoc.documentNo],
+          status: "reversed"
+        }, nextReturnId());
+        if (!returnRow) return null;
+        incNextReturnId();
+        return returnRow;
+      }).filter(Boolean);
+      if (!returnRows.length) return null;
+      setReturns(returnRows.concat(getReturns()));
       const linkedSource = {
         status: "reversed",
         reversalDocumentNo: documentNo,
@@ -752,7 +779,7 @@
       } else {
         setSales(getSales().map((doc) => doc.id === sourceDoc.id ? Object.assign({}, doc, linkedSource) : doc));
       }
-      return copyReturn(returnRow);
+      return copyReturn(returnRows[0]);
     }
 
     function findVoidReversal(type, id) {
