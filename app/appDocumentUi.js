@@ -98,9 +98,9 @@ function voidDocumentButton(item, type) {
 
 function voidReversalButton(item, type) {
   if (!isVoidedDocument(item)) { return ""; }
-  const label = "建立沖銷";
-  if (item.reversalDocumentNo) { return `<button class="text-button" type="button" disabled title="${escapeAttr(`已建立沖銷事件：${item.reversalDocumentNo}`)}">${label}</button>`; }
+  const label = t("actions.createReversal", "建立沖銷");
+  if (item.reversalDocumentNo) { return `<button class="text-button" type="button" disabled title="${escapeAttr(interpolate(t("tooltips.reversalAlreadyCreated", "已建立沖銷事件：{documentNo}"), { documentNo: item.reversalDocumentNo }))}">${label}</button>`; }
   if (!canPerform("voidDocument", targetDocumentContext(item))) { return `<button class="text-button" type="button" disabled title="${escapeAttr(permissionReason("voidDocument"))}">${label}</button>`; }
   const dataAttribute = type === "purchase" ? "data-create-purchase-reversal-id" : "data-create-sale-reversal-id";
-  return `<button class="text-button" type="button" data-void-ui-create-reversal-action ${dataAttribute}="${item.id}" title="建立反向事件並連結原單">${label}</button>`;
+  return `<button class="text-button" type="button" data-void-ui-create-reversal-action ${dataAttribute}="${item.id}" title="${escapeAttr(t("tooltips.createReversal", "建立反向事件並連結原單"))}">${label}</button>`;
 }

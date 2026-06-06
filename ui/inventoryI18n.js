@@ -47,7 +47,9 @@
         purchaseReturn: "建立進貨退貨，會扣回庫存並調整應付。",
         salesReturn: "建立銷售退貨，會回補庫存並調整應收。",
         returnCompleted: "此單據已無可退數量。",
-        convertToLoan: "銷貨轉借貨：建立退貨單並調撥至借貨倉。"
+        convertToLoan: "銷貨轉借貨：建立退貨單並調撥至借貨倉。",
+        createReversal: "建立反向事件並連結原單",
+        reversalAlreadyCreated: "已建立沖銷事件：{documentNo}"
       },
       confirmations: {
         resetSampleData: "確定要重設為範例資料嗎？\n\n這會取代目前瀏覽器內的資料。建議先匯出完整備份。",
@@ -96,7 +98,9 @@
         convertToLoanReasonRequired: "請先填寫轉借貨原因。",
         convertToLoanFailed: "轉借貨失敗，請確認銷售單狀態與借貨倉設定。",
         noConvertibleQuantity: "此單身已無可轉換數量。",
-        convertToLoanSaved: "已轉為借貨：退貨單 {returnDocumentNo}，調撥單 {transferDocumentNo}。"
+        convertToLoanSaved: "已轉為借貨：退貨單 {returnDocumentNo}，調撥單 {transferDocumentNo}。",
+        voidReversalNotFound: "找不到可建立沖銷事件的作廢單據。",
+        voidReversalSaved: "已建立沖銷事件：{documentNo}"
       },
       prompts: {
         voidReason: "請填寫作廢原因，系統會保留原始單據紀錄。",
@@ -183,6 +187,7 @@
         requestVoid: "申請作廢",
         cancelVoid: "取消作廢申請",
         createReturn: "退貨",
+        createReversal: "建立沖銷",
         takeDocumentOwnership: "改由我負責",
         exportInventoryCsv: "匯出庫存 CSV",
         resetSampleData: "重設範例資料",
@@ -228,7 +233,8 @@
         open: "未結",
         warehouseStock: "倉庫庫存",
         source: "來源",
-        andMore: "等"
+        andMore: "等",
+        unknownProduct: "未知商品"
       },
       documentStatus: {
         draft: "草稿",

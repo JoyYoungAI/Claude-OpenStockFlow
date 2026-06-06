@@ -288,7 +288,7 @@ function handleVoidReversal(type, id) {
   const targetDocument = targetDocumentById(type, id);
   if (!requireAction("voidDocument", { targetDocument })) { return; }
   const result = store.createVoidReversal(type, id, { user: currentUser.name });
-  if (!result) { setStatus("找不到可建立沖銷事件的作廢單據。", true); return; }
+  if (!result) { setStatus(t("messages.voidReversalNotFound", "找不到可建立沖銷事件的作廢單據。"), true); return; }
   saveState();
   recordAudit("create", {
     entityType: "voidReversal", entityId: result.id, documentNo: result.documentNo,
@@ -296,7 +296,7 @@ function handleVoidReversal(type, id) {
     summary: `建立沖銷事件：${result.documentNo}`, riskLevel: "high"
   });
   saveState();
-  setStatus(`已建立沖銷事件：${result.documentNo}`);
+  setStatus(interpolate(t("messages.voidReversalSaved", "已建立沖銷事件：{documentNo}"), { documentNo: result.documentNo }));
   render();
 }
 
@@ -603,8 +603,8 @@ function collectTransferItems(data) {
   return items;
 }
 
-function productName(productId) { const product = store.listProducts().find((item) => item.id === Number(productId)); return product ? product.name : "未知商品"; }
-function warehouseName(warehouseId) { const warehouse = store.listWarehouses().find((item) => item.id === Number(warehouseId)); return warehouse ? `${warehouse.code} ${warehouse.name}` : "未指定倉庫"; }
+function productName(productId) { const product = store.listProducts().find((item) => item.id === Number(productId)); return product ? product.name : t("common.unknownProduct", "未知商品"); }
+function warehouseName(warehouseId) { const warehouse = store.listWarehouses().find((item) => item.id === Number(warehouseId)); return warehouse ? `${warehouse.code} ${warehouse.name}` : t("common.unassignedWarehouse", "未指定倉庫"); }
 function categoryName(categoryId) { const category = store.listProductCategories().find((item) => item.id === Number(categoryId)); return category ? category.name : ""; }
 
 function movementBadge(type) {
