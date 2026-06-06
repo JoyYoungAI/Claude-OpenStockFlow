@@ -1,5 +1,6 @@
 const appVersion = "1.18.0";
 const assetVersion = "1.18.0";
+const today = new Date().toISOString().slice(0, 10);
 const accessRoleStorageKey = "stockflow-current-role-v1";
 const currentEmployeeStorageKey = "stockflow-current-employee-v1";
 const storage = ClaudeOpenStockFlowStorage.createInventoryStorage({ seedState, appVersion, assetVersion, storageKey: typeof getActiveCompanyStorageKey === "function" ? getActiveCompanyStorageKey() : undefined });
