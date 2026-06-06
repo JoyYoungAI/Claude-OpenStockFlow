@@ -330,25 +330,25 @@ function handleConvertToLoan(lineId) {
   const targetDocument = targetDocumentById("sale", lineId);
   if (!requireAction("createSalesReturn", { targetDocument })) { return; }
   const loanWarehouses = store.listWarehouses({ activeOnly: true }).filter((w) => w.type === "loan");
-  if (!loanWarehouses.length) { setStatus("系統中尚未設定借貨倉，請先在倉庫主檔新增 type=loan 的倉庫。", true); return; }
+  if (!loanWarehouses.length) { setStatus(t("messages.noLoanWarehouse", "系統中尚未設定借貨倉，請先在倉庫主檔新增 type=loan 的倉庫。"), true); return; }
   let loanWarehouseId;
   if (loanWarehouses.length === 1) {
     loanWarehouseId = loanWarehouses[0].id;
   } else {
     const choices = loanWarehouses.map((w, i) => `${i + 1}. ${w.name} (${w.code})`).join("\n");
-    const input = prompt(`請選擇借貨倉（輸入序號）：\n${choices}`);
+    const input = prompt(`${t("prompts.selectLoanWarehouse", "請選擇借貨倉（輸入序號）")}：\n${choices}`);
     const idx = Number(input) - 1;
-    if (!Number.isFinite(idx) || idx < 0 || idx >= loanWarehouses.length) { setStatus("請輸入有效的序號選擇借貨倉。", true); return; }
+    if (!Number.isFinite(idx) || idx < 0 || idx >= loanWarehouses.length) { setStatus(t("messages.invalidLoanWarehouseSelection", "請輸入有效的序號選擇借貨倉。"), true); return; }
     loanWarehouseId = loanWarehouses[idx].id;
   }
-  const reason = prompt("請輸入轉借貨原因");
-  if (!String(reason || "").trim()) { setStatus("請先填寫轉借貨原因。", true); return; }
+  const reason = prompt(t("prompts.convertToLoanReason", "請輸入轉借貨原因"));
+  if (!String(reason || "").trim()) { setStatus(t("messages.convertToLoanReasonRequired", "請先填寫轉借貨原因。"), true); return; }
   const result = store.convertSaleLinesToLoan({
     saleId: lineId, lineIds: [lineId], loanWarehouseId,
     reason, user: currentUser.name, date: today
   });
-  if (!result) { setStatus("轉借貨失敗，請確認銷售單狀態與借貨倉設定。", true); return; }
-  if (result.error === "NO_RETURNABLE_QUANTITY") { setStatus("此單身已無可轉換數量。", true); return; }
+  if (!result) { setStatus(t("messages.convertToLoanFailed", "轉借貨失敗，請確認銷售單狀態與借貨倉設定。"), true); return; }
+  if (result.error === "NO_RETURNABLE_QUANTITY") { setStatus(t("messages.noConvertibleQuantity", "此單身已無可轉換數量。"), true); return; }
   saveState();
   recordAudit("create", {
     entityType: "loanConversion", documentNo: result.returnDocumentNo,
@@ -357,7 +357,7 @@ function handleConvertToLoan(lineId) {
     reason, after: { lines: result.lines.length }, riskLevel: "high"
   });
   saveState();
-  setStatus(`已轉為借貨：退貨單 ${result.returnDocumentNo}，調撥單 ${result.transferDocumentNo}。`);
+  setStatus(interpolate(t("messages.convertToLoanSaved", "已轉為借貨：退貨單 {returnDocumentNo}，調撥單 {transferDocumentNo}。"), { returnDocumentNo: result.returnDocumentNo, transferDocumentNo: result.transferDocumentNo }));
   render();
 }
 

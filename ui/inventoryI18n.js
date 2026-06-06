@@ -87,14 +87,25 @@
         returnReasonRequired: "請先填寫退貨原因。",
         returnSaveFailed: "退貨單無法建立。",
         returnQuantityExceeded: "退貨數量不可超過原單剩餘可退數量。",
-        returnSaved: "已建立退貨單 {documentNo}。"
+        returnSaved: "已建立退貨單 {documentNo}。",
+        approvalReasonRequired: "請先填寫原因。",
+        approvalActionFailed: "單據狀態無法更新。",
+        approvalActionSaved: "單據狀態已更新：{action}",
+        noLoanWarehouse: "系統中尚未設定借貨倉，請先在倉庫主檔新增 type=loan 的倉庫。",
+        invalidLoanWarehouseSelection: "請輸入有效的序號選擇借貨倉。",
+        convertToLoanReasonRequired: "請先填寫轉借貨原因。",
+        convertToLoanFailed: "轉借貨失敗，請確認銷售單狀態與借貨倉設定。",
+        noConvertibleQuantity: "此單身已無可轉換數量。",
+        convertToLoanSaved: "已轉為借貨：退貨單 {returnDocumentNo}，調撥單 {transferDocumentNo}。"
       },
       prompts: {
         voidReason: "請填寫作廢原因，系統會保留原始單據紀錄。",
         rejectReason: "請輸入退回原因",
         voidRequestReason: "請輸入作廢申請原因",
         returnQuantity: "請輸入退貨數量",
-        returnReason: "請輸入退貨原因"
+        returnReason: "請輸入退貨原因",
+        selectLoanWarehouse: "請選擇借貨倉（輸入序號）",
+        convertToLoanReason: "請輸入轉借貨原因"
       },
       access: {
         localRole: "本機角色",
