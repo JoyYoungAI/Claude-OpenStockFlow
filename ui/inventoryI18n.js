@@ -100,7 +100,14 @@
         noConvertibleQuantity: "此單身已無可轉換數量。",
         convertToLoanSaved: "已轉為借貨：退貨單 {returnDocumentNo}，調撥單 {transferDocumentNo}。",
         voidReversalNotFound: "找不到可建立沖銷事件的作廢單據。",
-        voidReversalSaved: "已建立沖銷事件：{documentNo}"
+        voidReversalSaved: "已建立沖銷事件：{documentNo}",
+        purchaseSaved: "已建立進貨單 {documentNo}，共 {lineCount} 筆明細。",
+        purchaseVoided: "已作廢進貨紀錄，原單已保留並排除於有效庫存。",
+        saleSaved: "已建立銷售單 {documentNo}，共 {lineCount} 筆明細。",
+        saleVoided: "已作廢銷售紀錄，原單已保留並排除於有效庫存。",
+        adjustmentSaved: "已建立盤點調整 {documentNo}，異動 {quantityWithSign}。",
+        transferSaved: "已建立調撥單 {documentNo}，共 {lineCount} 筆明細。",
+        paymentSaved: "已儲存收付款。"
       },
       prompts: {
         voidReason: "請填寫作廢原因，系統會保留原始單據紀錄。",

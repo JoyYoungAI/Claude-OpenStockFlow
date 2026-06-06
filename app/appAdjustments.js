@@ -16,7 +16,7 @@ function bindAdjustmentHandlers() {
     adjustmentForm.reset();
     setDefaultDates();
     saveState();
-    setStatus(`已建立盤點調整 ${adjustment.documentNo}，異動 ${adjustment.quantity > 0 ? "+" : ""}${formatQuantity(adjustment.quantity)}。`);
+    setStatus(interpolate(t("messages.adjustmentSaved", "已建立盤點調整 {documentNo}，異動 {quantityWithSign}。"), { documentNo: adjustment.documentNo, quantityWithSign: (adjustment.quantity > 0 ? "+" : "") + formatQuantity(adjustment.quantity) }));
     render();
   });
 
@@ -42,7 +42,7 @@ function bindAdjustmentHandlers() {
     transferForm.reset();
     setDefaultDates();
     saveState();
-    setStatus(`已建立調撥單 ${transfer.documentNo}，共 ${transfer.lines.length} 筆明細。`);
+    setStatus(interpolate(t("messages.transferSaved", "已建立調撥單 {documentNo}，共 {lineCount} 筆明細。"), { documentNo: transfer.documentNo, lineCount: transfer.lines.length }));
     render();
   });
 

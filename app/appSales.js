@@ -31,7 +31,7 @@ function bindSaleHandlers() {
     saleForm.reset();
     setDefaultDates();
     saveState();
-    setStatus(`已建立銷售單 ${sale.documentNo}，共 ${sale.lines.length} 筆明細。`);
+    setStatus(interpolate(t("messages.saleSaved", "已建立銷售單 {documentNo}，共 {lineCount} 筆明細。"), { documentNo: sale.documentNo, lineCount: sale.lines.length }));
     render();
   });
 
@@ -64,7 +64,7 @@ function bindSaleHandlers() {
         summary: "作廢銷售紀錄", reason, riskLevel: "high"
       });
       saveState();
-      setStatus("已作廢銷售紀錄，原單已保留並排除於有效庫存。");
+      setStatus(t("messages.saleVoided", "已作廢銷售紀錄，原單已保留並排除於有效庫存。"));
       render();
     }
   });

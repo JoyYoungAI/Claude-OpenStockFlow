@@ -30,7 +30,7 @@ function bindPurchaseHandlers() {
     purchaseForm.reset();
     setDefaultDates();
     saveState();
-    setStatus(`已建立進貨單 ${purchase.documentNo}，共 ${purchase.lines.length} 筆明細。`);
+    setStatus(interpolate(t("messages.purchaseSaved", "已建立進貨單 {documentNo}，共 {lineCount} 筆明細。"), { documentNo: purchase.documentNo, lineCount: purchase.lines.length }));
     render();
   });
 
@@ -62,7 +62,7 @@ function bindPurchaseHandlers() {
         summary: "作廢進貨紀錄", reason, riskLevel: "high"
       });
       saveState();
-      setStatus("已作廢進貨紀錄，原單已保留並排除於有效庫存。");
+      setStatus(t("messages.purchaseVoided", "已作廢進貨紀錄，原單已保留並排除於有效庫存。"));
       render();
     }
   });

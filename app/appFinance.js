@@ -26,7 +26,7 @@ function bindFinanceHandlers() {
     paymentForm.reset();
     setDefaultDates();
     saveState();
-    setStatus("已儲存收付款。");
+    setStatus(t("messages.paymentSaved", "已儲存收付款。"));
     render();
   });
 
