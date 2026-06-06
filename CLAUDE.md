@@ -189,7 +189,7 @@ node inventoryEsm.test.mjs       # ESM parity 測試（確認 esm/ 與 core/ 匯
 | 常數 | 位置 | 說明 |
 |------|------|------|
 | `SCHEMA_VERSION` | `core/inventoryStorage.js` 第 3 行 | localStorage schema 版本號，目前 `13` |
-| `appVersion` | `app/app.js` 第 1 行 | 顯示版本號，目前 `1.18.0` |
+| `appVersion` | `app/app.js` 第 1 行 | 顯示版本號，目前 `1.19.0` |
 
 新增欄位時，`SCHEMA_VERSION` 加 1，並在 `migrateState()` 裡補 `withDefaultStatus` 或類似的欄位遷移邏輯。
 
