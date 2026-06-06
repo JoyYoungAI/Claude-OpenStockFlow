@@ -37,7 +37,17 @@
         alreadyVoided: "此單據已作廢，原始紀錄保留供查詢。",
         employeeRequiredForOwnership: "請先選擇本機人員。",
         alreadyDocumentOwner: "這張單據目前已由你負責。",
-        takeDocumentOwnership: "將這張未確認單據改由目前人員負責。"
+        takeDocumentOwnership: "將這張未確認單據改由目前人員負責。",
+        submitApproval: "送出審核，等待核准。",
+        approveDocument: "核准後仍需確認才會影響庫存與帳款。",
+        rejectDocument: "退回並保留原因與紀錄。",
+        confirmDocument: "確認後才會正式影響庫存、財務與報表。",
+        requestVoid: "提出作廢申請，等待管理者處理。",
+        cancelVoid: "撤回作廢申請，單據恢復為已確認狀態。",
+        purchaseReturn: "建立進貨退貨，會扣回庫存並調整應付。",
+        salesReturn: "建立銷售退貨，會回補庫存並調整應收。",
+        returnCompleted: "此單據已無可退數量。",
+        convertToLoan: "銷貨轉借貨：建立退貨單並調撥至借貨倉。"
       },
       confirmations: {
         resetSampleData: "確定要重設為範例資料嗎？\n\n這會取代目前瀏覽器內的資料。建議先匯出完整備份。",
@@ -72,10 +82,19 @@
         ownerReassignFailed: "單據負責人無法更新。",
         ownerReassignClosed: "這張單據已正式成立或已結束，不能直接改負責人。",
         ownerReassigned: "已更新單據負責人。",
-        roleSaveFailed: "本機角色無法儲存，重新整理後可能會回到管理者。"
+        roleSaveFailed: "本機角色無法儲存，重新整理後可能會回到管理者。",
+        returnQuantityRequired: "請輸入有效的退貨數量。",
+        returnReasonRequired: "請先填寫退貨原因。",
+        returnSaveFailed: "退貨單無法建立。",
+        returnQuantityExceeded: "退貨數量不可超過原單剩餘可退數量。",
+        returnSaved: "已建立退貨單 {documentNo}。"
       },
       prompts: {
-        voidReason: "請填寫作廢原因，系統會保留原始單據紀錄。"
+        voidReason: "請填寫作廢原因，系統會保留原始單據紀錄。",
+        rejectReason: "請輸入退回原因",
+        voidRequestReason: "請輸入作廢申請原因",
+        returnQuantity: "請輸入退貨數量",
+        returnReason: "請輸入退貨原因"
       },
       access: {
         localRole: "本機角色",
@@ -146,6 +165,13 @@
         edit: "編輯",
         deactivate: "停用",
         void: "作廢",
+        submitApproval: "送審",
+        approveDocument: "核准",
+        rejectDocument: "退回",
+        confirmDocument: "確認",
+        requestVoid: "申請作廢",
+        cancelVoid: "取消作廢申請",
+        createReturn: "退貨",
         takeDocumentOwnership: "改由我負責",
         exportInventoryCsv: "匯出庫存 CSV",
         resetSampleData: "重設範例資料",
@@ -163,6 +189,7 @@
         noDocumentNo: "無單號",
         noNote: "無備註",
         notFilled: "未填",
+        notCreated: "尚未建立",
         unassignedWarehouse: "未指定倉庫",
         active: "啟用",
         inactive: "停用",
@@ -187,7 +214,10 @@
         paymentOut: "付款",
         paid: "已結清",
         partial: "部分沖帳",
-        open: "未結"
+        open: "未結",
+        warehouseStock: "倉庫庫存",
+        source: "來源",
+        andMore: "等"
       },
       documentStatus: {
         draft: "草稿",
@@ -244,7 +274,8 @@
         paymentTarget: "沖帳對象",
         amount: "金額",
         method: "方式",
-        reportMonth: "報表月份"
+        reportMonth: "報表月份",
+        unlinkedPartner: "— 未連結 —"
       },
       placeholders: {
         productSearch: "搜尋 SKU / 名稱",
