@@ -39,6 +39,9 @@ function bindSaleHandlers() {
     const returnButton = event.target.closest("[data-return-sale-id]");
     if (returnButton) { handleReturn("sale", Number(returnButton.dataset.returnSaleId)); return; }
 
+    const convertLoanButton = event.target.closest("[data-convert-to-loan-line-id]");
+    if (convertLoanButton) { handleConvertToLoan(Number(convertLoanButton.dataset.convertToLoanLineId)); return; }
+
     const reassignButton = event.target.closest("[data-reassign-sale-owner-id]");
     if (reassignButton) { handleDocumentOwnerReassign("sale", Number(reassignButton.dataset.reassignSaleOwnerId)); return; }
 
@@ -110,7 +113,10 @@ function renderSales() {
         const returnBtn = canReturn && remaining > 0
           ? `<button class="text-button" type="button" data-return-sale-id="${line.lineId}" title="${escapeAttr(t("tooltips.salesReturn", "建立銷售退貨，會回補庫存並調整應收。"))}">${t("actions.createReturn", "退貨")}</button>`
           : canReturn ? `<button class="text-button" type="button" disabled title="${escapeAttr(t("tooltips.returnCompleted", "此單據已無可退數量。"))}">${t("actions.createReturn", "退貨")}</button>` : "";
-        return `<div class="record-meta">${escapeHtml(productName(line.productId))} × ${formatQuantity(line.quantity)} / ${formatRestrictedMoney(line.unitPrice, "viewSalesRevenue")}${returned ? ` / ${t("documentStatus.returnedQuantity", "已退")} ${formatQuantity(returned)}` : ""} ${returnBtn}</div>`;
+        const convertLoanBtn = canReturn && remaining > 0
+          ? `<button class="text-button" type="button" data-convert-to-loan-line-id="${line.lineId}" title="${escapeAttr(t("tooltips.convertToLoan", "銷貨轉借貨：建立退貨單並調撥至借貨倉。"))}">轉借貨</button>`
+          : "";
+        return `<div class="record-meta">${escapeHtml(productName(line.productId))} × ${formatQuantity(line.quantity)} / ${formatRestrictedMoney(line.unitPrice, "viewSalesRevenue")}${returned ? ` / ${t("documentStatus.returnedQuantity", "已退")} ${formatQuantity(returned)}` : ""} ${returnBtn}${convertLoanBtn}</div>`;
       }).join("");
       return `
         <article class="record-card">
