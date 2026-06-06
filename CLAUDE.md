@@ -1,5 +1,5 @@
 # Claude-OpenStockFlow — CLAUDE.md
-> 大補丸 1 號 · 版本日期 2026-06-05
+> 大補丸 1 號 · 版本日期 2026-06-06
 
 ---
 
@@ -78,6 +78,7 @@ appSales.js          銷售出貨
 appAdjustments.js    盤點調整 + 調撥
 appFinance.js        財務（應收/應付/收付款）
 appReports.js        報表/稽核/教學/庫存
+appCompany.js        多公司帳套管理（localStorage key 分隔）
 app.js               初始化 + 共用函式 + 全域常數
 
 ── esm/（ESM parity，僅測試用，瀏覽器 loader 不載入）──
@@ -160,7 +161,7 @@ core/inventoryUtils → core/inventoryModelsMaster → core/inventoryModelsFinan
 → app/appSeedData
 → app/appFormatters → app/appTextBaseline → app/appDocumentUi
 → app/appMaster → app/appPurchases → app/appSales → app/appAdjustments → app/appFinance → app/appReports
-→ app/app（最後）
+→ app/appCompany → app/app（最後）
 ```
 
 **載入由 index.html 底部的 script loader 控制**（sequential，照 `files` 陣列順序）。
@@ -188,7 +189,7 @@ node inventoryEsm.test.mjs       # ESM parity 測試（確認 esm/ 與 core/ 匯
 | 常數 | 位置 | 說明 |
 |------|------|------|
 | `SCHEMA_VERSION` | `core/inventoryStorage.js` 第 3 行 | localStorage schema 版本號，目前 `13` |
-| `appVersion` | `app/app.js` 第 1 行 | 顯示版本號，目前 `1.17.2` |
+| `appVersion` | `app/app.js` 第 1 行 | 顯示版本號，目前 `1.18.0` |
 
 新增欄位時，`SCHEMA_VERSION` 加 1，並在 `migrateState()` 裡補 `withDefaultStatus` 或類似的欄位遷移邏輯。
 
