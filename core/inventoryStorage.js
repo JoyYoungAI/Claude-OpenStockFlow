@@ -1,8 +1,8 @@
 (function (global) {
-  const storageKey = "stockflow-inventory-state";
   const SCHEMA_VERSION = 13;
 
   function createInventoryStorage(config) {
+    const storageKey = config.storageKey || "stockflow-inventory-state";
     const seedState = config.seedState;
     const appVersion = config.appVersion;
     const assetVersion = config.assetVersion;

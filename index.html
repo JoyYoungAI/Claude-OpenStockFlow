@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Claude-OpenStockFlow 進銷存系統</title>
-    <link rel="stylesheet" href="./styles.css?v=1.17.2">
+    <link rel="stylesheet" href="./styles.css?v=1.18.0">
   </head>
   <body>
     <main class="app-shell">
@@ -14,6 +14,10 @@
           <h1>進銷存系統 <span class="version-badge" id="app-version">v0.0.0</span></h1>
         </div>
         <div class="header-actions">
+          <label class="role-control">
+            <span>帳套</span>
+            <button class="button-secondary company-switch-btn" id="company-switch-button" type="button" onclick="showCompanyModal()"><span id="company-display">示範模式</span> ▾</button>
+          </label>
           <label class="role-control">
             <span>本機人員</span>
             <select id="employee-select" aria-label="本機人員"></select>
@@ -703,10 +707,31 @@
 
     </main>
 
+    <!-- 公司帳套管理 Modal -->
+    <div class="company-modal-overlay" id="company-modal" hidden>
+      <div class="company-modal-box">
+        <div class="company-modal-head">
+          <h3>公司帳套管理</h3>
+          <button class="company-modal-close" type="button" onclick="hideCompanyModal()" aria-label="關閉">×</button>
+        </div>
+        <div class="company-modal-body">
+          <div id="company-list"></div>
+          <hr class="company-divider">
+          <h4>新增公司帳套</h4>
+          <div class="company-form-row">
+            <input type="text" id="new-company-name" placeholder="公司名稱（必填）" maxlength="40" style="flex:2">
+            <input type="text" id="new-company-code" placeholder="代碼（選填，英數）" maxlength="10" style="flex:1">
+            <button class="button-primary" type="button" onclick="handleCreateCompany()">建立並切換</button>
+          </div>
+          <p class="company-hint">建立後頁面重新載入，舊帳套資料不受影響。首次建立時，示範模式的資料會遷移至此帳套。</p>
+        </div>
+      </div>
+    </div>
+
     <script>
     /* ── Script loader ── 升版只需改這一處 ── */
     (function () {
-      var V = "1.17.2";
+      var V = "1.18.0";
       var files = [
         "core/inventoryUtils", "core/inventoryModelsMaster", "core/inventoryModelsFinance", "core/inventoryModels", "ui/inventoryI18n", "services/inventoryAccess",
         "services/inventoryAudit", "services/inventoryBackup", "core/inventoryReports", "ui/inventoryMasterDataUi",
@@ -715,6 +740,7 @@
         "app/appSeedData",
         "app/appFormatters", "app/appTextBaseline", "app/appDocumentUi",
         "app/appMaster", "app/appPurchases", "app/appSales", "app/appAdjustments", "app/appFinance", "app/appReports",
+        "app/appCompany",
         "app/app"
       ];
       function load(i) {
