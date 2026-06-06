@@ -191,11 +191,16 @@
       },
       documentStatus: {
         draft: "草稿",
+        submitted: "送審中",
+        approved: "已核准",
+        rejected: "已退回",
         confirmed: "已確認",
         amended: "已修改",
+        voidRequested: "作廢申請",
         voided: "已作廢",
         reversed: "已沖銷",
-        voidReason: "作廢原因"
+        voidReason: "作廢原因",
+        returnedQuantity: "已退"
       },
       fields: {
         sku: "SKU",
