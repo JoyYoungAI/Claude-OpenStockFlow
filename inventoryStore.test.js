@@ -867,6 +867,39 @@ assert.equal(models.docReturnStatus(null, []).status, "none", "docReturnStatus: 
   assert.equal(multiLineCostStore.listProducts().find((p) => p.id === 2).cost, 80, "MLC: 商品2 成本回補");
 }
 
+// ── Guard: deactivateProduct / deactivateWarehouse 有進行中單據時應拒絕 ─────────
+{
+  const deactivateGuardStore = createInventoryStore({
+    products: [
+      { id: 1, sku: "DG01", name: "Item A", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true },
+      { id: 2, sku: "DG02", name: "Item B", category: "Food", unit: "pc", cost: 50, price: 100, safetyStock: 0, active: true }
+    ],
+    warehouses: [
+      { id: 1, code: "WA", name: "WH-A", type: "warehouse", note: "", active: true },
+      { id: 2, code: "WB", name: "WH-B", type: "warehouse", note: "", active: true }
+    ],
+    purchases: [], sales: []
+  });
+  // 草稿進貨單引用商品1 + 倉庫1
+  deactivateGuardStore.addPurchaseOrder({ supplier: "S", date: "2026-09-01", status: "draft", warehouseId: 1, items: [{ productId: 1, quantity: 5, unitCost: 100 }] });
+  // 商品1 有草稿單 → 停用應拒絕
+  assert.equal(deactivateGuardStore.deactivateProduct(1).error, "PRODUCT_HAS_OPEN_DOCUMENTS", "商品有草稿進貨單時應拒絕停用");
+  // 倉庫1 有草稿單 → 停用應拒絕
+  assert.equal(deactivateGuardStore.deactivateWarehouse(1).error, "WAREHOUSE_HAS_OPEN_DOCUMENTS", "倉庫有草稿進貨單時應拒絕停用");
+  // 商品2 無進行中單據 → 可以停用
+  assert.ok(deactivateGuardStore.deactivateProduct(2) && !deactivateGuardStore.deactivateProduct(2).error, "無單據商品應可停用（注意：已停用）");
+  // 倉庫2 無進行中單據 → 可以停用
+  assert.ok(deactivateGuardStore.deactivateWarehouse(2) && !deactivateGuardStore.deactivateWarehouse(2).error, "無單據倉庫應可停用");
+  // 進貨單確認後 商品1/倉庫1 應可停用
+  deactivateGuardStore.transitionPurchase(1, "submit", { user: "Test" });
+  assert.equal(deactivateGuardStore.deactivateProduct(1).error, "PRODUCT_HAS_OPEN_DOCUMENTS", "submitted 單據仍應拒絕");
+  deactivateGuardStore.transitionPurchase(1, "approve", { user: "Test" });
+  assert.equal(deactivateGuardStore.deactivateProduct(1).error, "PRODUCT_HAS_OPEN_DOCUMENTS", "approved 單據仍應拒絕");
+  deactivateGuardStore.transitionPurchase(1, "confirm", { user: "Test" });
+  const confirmedDeactivate = deactivateGuardStore.deactivateProduct(1);
+  assert.ok(confirmedDeactivate && !confirmedDeactivate.error, "confirmed 後商品應可停用");
+}
+
 // ── Bug fix: copyAdjustment / copyTransfer 包含 status / createdBy ────────────
 {
   const metaStore = createInventoryStore({

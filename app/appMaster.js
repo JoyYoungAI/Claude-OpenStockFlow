@@ -134,7 +134,9 @@ function bindMasterHandlers() {
     const product = store.listProducts().find((item) => item.id === Number(button.dataset.deactivateId));
     if (!product || !confirmAction("deactivateProduct", { name: product.name })) { return; }
     const deactivatedProduct = store.deactivateProduct(product.id);
-    if (deactivatedProduct) {
+    if (deactivatedProduct && deactivatedProduct.error === "PRODUCT_HAS_OPEN_DOCUMENTS") {
+      setStatus("此商品有進行中的單據（草稿 / 審核中），請結案後再停用。", true);
+    } else if (deactivatedProduct && !deactivatedProduct.error) {
       recordAudit("update", {
         entityType: "product", entityId: deactivatedProduct.id,
         summary: `停用商品：${deactivatedProduct.name}`,
@@ -197,7 +199,9 @@ function bindMasterHandlers() {
     const warehouse = store.listWarehouses().find((item) => item.id === Number(button.dataset.deactivateWarehouseId));
     if (!warehouse || !confirmAction("deactivateWarehouse", { name: warehouse.name })) { return; }
     const deactivatedWarehouse = store.deactivateWarehouse(warehouse.id);
-    if (deactivatedWarehouse) {
+    if (deactivatedWarehouse && deactivatedWarehouse.error === "WAREHOUSE_HAS_OPEN_DOCUMENTS") {
+      setStatus("此倉庫有進行中的單據（草稿 / 審核中），請結案後再停用。", true);
+    } else if (deactivatedWarehouse && !deactivatedWarehouse.error) {
       recordAudit("update", {
         entityType: "warehouse", entityId: deactivatedWarehouse.id,
         summary: `停用倉庫：${deactivatedWarehouse.name}`,

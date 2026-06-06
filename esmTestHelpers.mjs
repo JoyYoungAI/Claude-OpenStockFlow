@@ -70,6 +70,8 @@ function createMasterHarness(createMasterModule, defaultPreferences) {
     setWarehouses: (value) => { state.warehouses = value; },
     getPreferences: () => state.preferences,
     setPreferences: (value) => { state.preferences = value; },
+    getPurchases: () => [],
+    getSales: () => [],
     nextProductId: () => state.nextProductId,
     incNextProductId: () => { state.nextProductId += 1; },
     nextPartnerId: () => state.nextPartnerId,

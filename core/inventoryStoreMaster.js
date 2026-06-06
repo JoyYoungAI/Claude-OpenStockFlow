@@ -9,6 +9,7 @@
       getProductCategories, setProductCategories,
       getWarehouses, setWarehouses,
       getPreferences, setPreferences,
+      getPurchases, getSales,
       nextProductId, incNextProductId,
       nextPartnerId, incNextPartnerId,
       nextDepartmentId, incNextDepartmentId,
@@ -17,6 +18,10 @@
       nextCategoryId, incNextCategoryId,
       nextWarehouseId, incNextWarehouseId
     } = ctx;
+
+    function isInFlightStatus(status) {
+      return ["draft", "submitted", "approved", "voidRequested"].includes(status);
+    }
 
     const models = global.ClaudeOpenStockFlowModels || (typeof require !== "undefined" ? require("./inventoryModels") : {});
     const {
@@ -103,9 +108,14 @@
     }
 
     function deactivateProduct(id) {
+      const productId = Number(id);
+      const hasInFlight =
+        getPurchases().some((d) => isInFlightStatus(d.status) && Array.isArray(d.lines) && d.lines.some((l) => l.productId === productId)) ||
+        getSales().some((d) => isInFlightStatus(d.status) && Array.isArray(d.lines) && d.lines.some((l) => l.productId === productId));
+      if (hasInFlight) return { error: "PRODUCT_HAS_OPEN_DOCUMENTS" };
       let updated = null;
       setProducts(getProducts().map((product) => {
-        if (product.id !== id) return product;
+        if (product.id !== productId) return product;
         updated = Object.assign({}, product, { active: false });
         return updated;
       }));
@@ -143,9 +153,14 @@
     }
 
     function deactivateWarehouse(id) {
+      const warehouseId = Number(id);
+      const hasInFlight =
+        getPurchases().some((d) => isInFlightStatus(d.status) && d.warehouseId === warehouseId) ||
+        getSales().some((d) => isInFlightStatus(d.status) && d.warehouseId === warehouseId);
+      if (hasInFlight) return { error: "WAREHOUSE_HAS_OPEN_DOCUMENTS" };
       let updated = null;
       setWarehouses(getWarehouses().map((warehouse) => {
-        if (warehouse.id !== Number(id)) return warehouse;
+        if (warehouse.id !== warehouseId) return warehouse;
         updated = Object.assign({}, warehouse, { active: false });
         return updated;
       }));
