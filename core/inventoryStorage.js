@@ -80,8 +80,8 @@
         warehouses: migratedWarehouses,
         purchases: migratedPurchases,
         sales: migratedSales,
-        adjustments: withDefaultWarehouse(rawState.adjustments, migratedWarehouseId),
-        transfers: withDefaultTransferWarehouses(rawState.transfers, migratedWarehouseId),
+        adjustments: withDefaultStatus(withDefaultWarehouse(rawState.adjustments, migratedWarehouseId), "confirmed"),
+        transfers: withDefaultStatus(withDefaultTransferWarehouses(rawState.transfers, migratedWarehouseId), "confirmed"),
         returns: withDefaultReturnUnitPrice(withDefaultStatus(withDefaultWarehouse(rawState.returns, migratedWarehouseId), "confirmed")),
         costLayers: (Array.isArray(rawState.costLayers) ? rawState.costLayers : []).map((layer) =>
           layer && !layer.warehouseId ? Object.assign({}, layer, { warehouseId: migratedWarehouseId }) : layer

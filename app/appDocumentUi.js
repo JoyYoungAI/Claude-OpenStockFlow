@@ -42,16 +42,6 @@ function voidDetailPanel(item, type) {
 
 function isVoidedDocument(item) { return ClaudeOpenStockFlowModels.isVoidedDocument(item); }
 
-function returnMeta(item, documentType) {
-  const quantity = returnedQuantity(item, documentType);
-  if (!quantity) { return ""; }
-  return ` / ${t("documentStatus.returnedQuantity", "已退")}：${formatQuantity(quantity)}`;
-}
-
-function returnedQuantity(item, documentType) {
-  return store.listReturns({ documentType }).filter((returnRow) => returnRow.sourceLineId === item.id).reduce((sum, returnRow) => sum + returnRow.quantity, 0);
-}
-
 function documentResponsibilityText(item) {
   const unassigned = t("common.unassignedOwner", "未指派");
   const ownerName = employeeName(item && item.ownerEmployeeId) || unassigned;
@@ -61,19 +51,6 @@ function documentResponsibilityText(item) {
 
 function employeeName(employeeId) { const employee = store.listEmployees().find((item) => item.id === Number(employeeId)); return employee ? employee.name : ""; }
 function departmentName(departmentId) { const department = store.listDepartments().find((item) => item.id === Number(departmentId)); return department ? department.name : ""; }
-
-function returnDocumentButton(item, type) {
-  if (!item || !["confirmed", "amended", "voidRequested"].includes(item.status || "confirmed") || isVoidedDocument(item)) { return ""; }
-  const documentType = type === "purchase" ? "purchaseReturn" : "salesReturn";
-  const remaining = item.quantity - returnedQuantity(item, documentType);
-  const label = t("actions.createReturn", "退貨");
-  if (remaining <= 0) { return `<button class="text-button" type="button" disabled title="${escapeAttr(t("tooltips.returnCompleted", "此單據已無可退數量。"))}">${label}</button>`; }
-  const permissionAction = returnPermissionAction(type);
-  if (!canPerform(permissionAction, targetDocumentContext(item))) { return `<button class="text-button" type="button" disabled title="${escapeAttr(permissionReason(permissionAction))}">${label}</button>`; }
-  const dataAttribute = type === "purchase" ? "data-return-purchase-id" : "data-return-sale-id";
-  const tooltip = type === "purchase" ? t("tooltips.purchaseReturn", "建立進貨退貨，會扣回庫存並調整應付。") : t("tooltips.salesReturn", "建立銷售退貨，會回補庫存並調整應收。");
-  return `<button class="text-button" type="button" title="${escapeAttr(tooltip)}" ${dataAttribute}="${item.id}">${label}</button>`;
-}
 
 function documentWorkflowButtons(item, type) {
   if (!item || isVoidedDocument(item)) { return ""; }
