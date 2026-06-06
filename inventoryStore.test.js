@@ -10,7 +10,8 @@ const { createInventoryAccess } = require("./services/inventoryAccess");
   for (const name of ["seedState", "learningTopics", "learningChecklist"]) {
     assert(code.includes(`const ${name} `), `appSeedData.js 必須定義 const ${name}`);
   }
-  // app.js 不可依賴 appSeedData 提供 today
+  // app.js 不可依賴 appSeedData 提供 today；appSeedData.js 也不可定義 today
+  assert(!code.includes("const today"), "appSeedData.js 不得定義 today（屬 app.js 應用層）");
   const appCode = fs.readFileSync("./app/app.js", "utf8");
   assert(appCode.includes("const today"), "app.js 必須自行定義 today");
 
@@ -39,6 +40,32 @@ const { createInventoryAccess } = require("./services/inventoryAccess");
   assert.equal(s.payables[1].amount,  7900, "AP-002 金額錯");
   assert.equal(s.receivables[0].amount, 5400, "AR-001 金額錯");
   assert.equal(s.receivables[1].amount, 3210, "AR-002 金額錯");
+}
+
+// ── Script loader 完整性 ──────────────────────────────────────────────────────
+{
+  const html = fs.readFileSync("./index.html", "utf8");
+  const match = html.match(/var files\s*=\s*\[([\s\S]*?)\];/);
+  assert(match, "index.html 找不到 var files = [...] 區塊");
+  const files = (match[1].match(/"([^"]+)"/g) || []).map(s => s.replace(/"/g, ""));
+  assert(files.length > 0, "script loader files 陣列不得為空");
+  for (const f of files) {
+    assert(fs.existsSync(`./${f}.js`), `script loader 列出的檔案不存在：${f}.js`);
+  }
+  // appCompany 必須在 app 之前
+  const ciCompany = files.indexOf("app/appCompany");
+  const ciApp     = files.indexOf("app/app");
+  assert(ciCompany >= 0, "script loader 缺少 app/appCompany");
+  assert(ciApp     >= 0, "script loader 缺少 app/app");
+  assert(ciCompany < ciApp, "app/appCompany 必須排在 app/app 之前");
+}
+
+// ── appCompany.js window 合約 ─────────────────────────────────────────────────
+{
+  const code = fs.readFileSync("./app/appCompany.js", "utf8");
+  for (const name of ["getActiveCompanyStorageKey", "renderCompanySelector", "showCompanyModal", "hideCompanyModal"]) {
+    assert(code.includes(`window.${name}`), `appCompany.js 必須將 ${name} 掛到 window`);
+  }
 }
 
 let accessUser = { role: "sales", employeeId: 2, departmentId: 2 };
