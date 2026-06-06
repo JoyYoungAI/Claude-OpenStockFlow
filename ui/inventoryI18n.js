@@ -150,6 +150,7 @@
       },
       access: {
         localRole: "本機角色",
+        localEmployee: "本機人員",
         currentRole: "目前本機角色：{role}",
         roleChanged: "已切換本機角色：{role}。"
       },
@@ -244,6 +245,7 @@
         notFilled: "未填",
         notCreated: "尚未建立",
         unassignedWarehouse: "未指定倉庫",
+        unassignedDepartment: "未指定部門",
         active: "啟用",
         inactive: "停用",
         localUser: "本機使用者",

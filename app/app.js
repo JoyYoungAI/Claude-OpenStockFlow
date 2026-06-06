@@ -185,7 +185,7 @@ function bindEvents() {
     pendingRestoreState = null;
     restoreButton.disabled = true;
     const file = backupFileInput.files && backupFileInput.files[0];
-    if (!file) { backupPreview.textContent = "尚未選擇備份檔。"; backupPreview.classList.add("empty"); renderActionAvailability(); return; }
+    if (!file) { backupPreview.textContent = t("emptyStates.noBackupFile", "尚未選擇備份檔。"); backupPreview.classList.add("empty"); renderActionAvailability(); return; }
     readBackupFile(file);
   });
 
@@ -529,13 +529,13 @@ function renderAccessControl() {
     saveCurrentUser();
   }
   const employeeLabel = employeeSelect.closest("label") && employeeSelect.closest("label").querySelector("span");
-  if (employeeLabel) { employeeLabel.textContent = "本機人員"; }
+  if (employeeLabel) { employeeLabel.textContent = t("access.localEmployee", "本機人員"); }
   employeeSelect.innerHTML = employees.length
     ? employees.map((employee) => {
       const department = store.listDepartments().find((item) => item.id === employee.departmentId);
-      return `<option value="${employee.id}">${escapeHtml(employee.name)} / ${escapeHtml(department ? department.name : "未指定部門")} / ${escapeHtml(roleLabel(employee.role))}</option>`;
+      return `<option value="${employee.id}">${escapeHtml(employee.name)} / ${escapeHtml(department ? department.name : t("common.unassignedDepartment", "未指定部門"))} / ${escapeHtml(roleLabel(employee.role))}</option>`;
     }).join("")
-    : `<option value="">本機使用者</option>`;
+    : `<option value="">${escapeHtml(t("common.localUser", "本機使用者"))}</option>`;
   employeeSelect.value = employees.some((employee) => employee.id === currentUser.employeeId) ? String(currentUser.employeeId) : "";
   const roleLabelElement = roleSelect.closest("label") && roleSelect.closest("label").querySelector("span");
   if (roleLabelElement) { roleLabelElement.textContent = t("access.localRole", "本機角色"); }
