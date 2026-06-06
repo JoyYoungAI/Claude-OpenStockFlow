@@ -48,6 +48,7 @@
         salesReturn: "建立銷售退貨，會回補庫存並調整應收。",
         returnCompleted: "此單據已無可退數量。",
         convertToLoan: "銷貨轉借貨：建立退貨單並調撥至借貨倉。",
+        exportAuditLogs: "匯出目前篩選的稽核紀錄。",
         createReversal: "建立反向事件並連結原單",
         reversalAlreadyCreated: "已建立沖銷事件：{documentNo}"
       },
@@ -273,7 +274,32 @@
         warehouseStock: "倉庫庫存",
         source: "來源",
         andMore: "等",
-        unknownProduct: "未知商品"
+        unknownProduct: "未知商品",
+        restricted: "未開放"
+      },
+      warehouseTypes: {
+        store: "門市",
+        display: "展示",
+        inspection: "待驗",
+        loan: "借出",
+        return: "退貨區",
+        default: "倉庫"
+      },
+      departmentTypes: {
+        sales: "銷售",
+        purchasing: "採購",
+        warehouse: "倉儲",
+        finance: "財務",
+        admin: "管理",
+        audit: "稽核"
+      },
+      voidEffect: {
+        purchase: "進貨庫存與應付帳款已從有效資料排除，沖銷事件建立後可追溯原單。",
+        sale: "銷售出貨、應收帳款與毛利已從有效資料排除，沖銷事件建立後可追溯原單。"
+      },
+      filters: {
+        allCategories: "全部分類",
+        allWarehouses: "全部倉庫"
       },
       documentStatus: {
         draft: "草稿",
@@ -454,7 +480,8 @@
         noMovements: "這個期間沒有符合條件的庫存異動。",
         noStockRows: "沒有符合條件的庫存資料。",
         noBackupFile: "尚未選擇備份檔。",
-        noLearningTopics: "沒有符合條件的教學章節。"
+        noLearningTopics: "沒有符合條件的教學章節。",
+        noAuditLogs: "尚無符合條件的稽核紀錄。"
       },
       reports: {
         receivableBalance: "應收餘額",

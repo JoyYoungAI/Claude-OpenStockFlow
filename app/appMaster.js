@@ -348,11 +348,11 @@ function resetPartnerForm() {
 }
 
 function renderStockFilters() {
-  renderCategorySelect(categoryFilter, "全部分類");
-  renderWarehouseFilter(warehouseFilter, "全部倉庫");
+  renderCategorySelect(categoryFilter, t("filters.allCategories", "全部分類"));
+  renderWarehouseFilter(warehouseFilter, t("filters.allWarehouses", "全部倉庫"));
 }
 
-function renderProductFilters() { renderCategorySelect(productCategoryFilter, "全部分類"); }
+function renderProductFilters() { renderCategorySelect(productCategoryFilter, t("filters.allCategories", "全部分類")); }
 function renderProductCategoryOptions() { masterDataUi.renderProductCategoryOptions(); }
 
 function renderCategorySelect(select, emptyLabel) {

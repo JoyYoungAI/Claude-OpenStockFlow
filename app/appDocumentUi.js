@@ -29,7 +29,7 @@ function voidDetailPanel(item, type) {
   const sourceDocumentNo = item.sourceDocumentNo || item.documentNo || t("common.noDocumentNo", "無單號");
   const reversalDocumentNo = item.reversalDocumentNo || (reversal && reversal.documentNo) || notCreated;
   const relatedDocumentNos = [sourceDocumentNo].concat(item.relatedDocumentNos || []).concat(reversalDocumentNo === notCreated ? [] : [reversalDocumentNo]).filter(Boolean);
-  const effectText = type === "purchase" ? "進貨庫存與應付帳款已從有效資料排除，沖銷事件建立後可追溯原單。" : "銷售出貨、應收帳款與毛利已從有效資料排除，沖銷事件建立後可追溯原單。";
+  const effectText = type === "purchase" ? t("voidEffect.purchase", "進貨庫存與應付帳款已從有效資料排除，沖銷事件建立後可追溯原單。") : t("voidEffect.sale", "銷售出貨、應收帳款與毛利已從有效資料排除，沖銷事件建立後可追溯原單。");
   return `
     <div class="void-detail" data-void-ui-source-reversal-link>
       <span data-void-ui-reason-visible>原單 ${escapeHtml(sourceDocumentNo)} / 沖銷 ${escapeHtml(reversalDocumentNo)}</span>

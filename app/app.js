@@ -568,7 +568,7 @@ function renderActionAvailability() {
   setActionDisabled(paymentForm.querySelector('button[type="submit"]'), "managePayments", paymentReason);
   const restoreReason = staleReason || (pendingRestoreState ? "" : t("tooltips.restoreBackupDisabled", "請先選擇並通過檢查的備份檔。"));
   setActionDisabled(exportButton, "exportInventoryCsv", staleReason, t("tooltips.exportInventoryCsv", "依目前庫存報表篩選條件匯出 CSV。"));
-  setActionDisabled(auditExportButton, "exportAuditLogs", staleReason, "匯出目前篩選的稽核紀錄。");
+  setActionDisabled(auditExportButton, "exportAuditLogs", staleReason, t("tooltips.exportAuditLogs", "匯出目前篩選的稽核紀錄。"));
   setActionDisabled(backupExportButton, "exportBackup", staleReason, t("tooltips.exportBackup", "匯出完整 JSON 備份，可用於之後還原。"));
   setActionDisabled(restoreButton, "restoreBackup", restoreReason, t("tooltips.restoreBackup", "用已選取的備份檔取代目前資料。"));
 }
@@ -617,17 +617,16 @@ function movementBadge(type) {
 }
 
 function warehouseTypeLabel(type) {
-  if (type === "store") { return "門市"; }
-  if (type === "display") { return "展示"; }
-  if (type === "inspection") { return "待驗"; }
-  if (type === "loan") { return "借出"; }
-  if (type === "return") { return "退貨區"; }
-  return "倉庫";
+  const labels = { store: t("warehouseTypes.store", "門市"), display: t("warehouseTypes.display", "展示"), inspection: t("warehouseTypes.inspection", "待驗"), loan: t("warehouseTypes.loan", "借出"), return: t("warehouseTypes.return", "退貨區") };
+  return labels[type] || t("warehouseTypes.default", "倉庫");
 }
 
 function roleLabel(role) { return accessControl.roleLabel(role); }
-function departmentTypeLabel(type) { const labels = { sales: "銷售", purchasing: "採購", warehouse: "倉儲", finance: "財務", admin: "管理", audit: "稽核" }; return labels[type] || type || "-"; }
-function restrictedText() { return "未開放"; }
+function departmentTypeLabel(type) {
+  const labels = { sales: t("departmentTypes.sales", "銷售"), purchasing: t("departmentTypes.purchasing", "採購"), warehouse: t("departmentTypes.warehouse", "倉儲"), finance: t("departmentTypes.finance", "財務"), admin: t("departmentTypes.admin", "管理"), audit: t("departmentTypes.audit", "稽核") };
+  return labels[type] || type || "-";
+}
+function restrictedText() { return t("common.restricted", "未開放"); }
 function formatRestrictedMoney(value, fieldName) { return canViewField(fieldName) ? formatMoney(value) : restrictedText(); }
 
 function saveState() { storage.saveState(store.snapshot()); }

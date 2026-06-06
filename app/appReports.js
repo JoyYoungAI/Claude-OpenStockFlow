@@ -164,7 +164,7 @@ function renderAuditLogs() {
         <td>${auditRiskBadge(event.riskLevel)}</td>
       </tr>
     `).join("")
-    : `<tr><td colspan="7" class="empty">尚無符合條件的稽核紀錄。</td></tr>`;
+    : `<tr><td colspan="7" class="empty">${t("emptyStates.noAuditLogs", "尚無符合條件的稽核紀錄。")}</td></tr>`;
 }
 
 function currentAuditOptions() { return auditControl.currentAuditOptions(); }
