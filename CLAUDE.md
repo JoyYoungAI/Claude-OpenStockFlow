@@ -19,6 +19,22 @@ Live Demo：https://joyyoungai.github.io/Claude-OpenStockFlow/
 - **禁止** 使用 `fetch` 或任何網路請求（純離線 localStorage 系統）
 - **禁止** 修改 `styles.css` 的 class 名稱（HTML 硬依賴）
 - **禁止** 刪除任何 `module.exports` 區塊（測試用 Node.js require 依賴）
+- **改寫任何 app 層 JS 前**，先 `grep -rn "名稱" app/` 確認消費者，再動刀
+
+---
+
+## appSeedData.js 全域輸出合約
+
+`appSeedData.js` 以頂層 `const` 提供全域變數，其他檔案直接使用（無需 import）。
+**改寫此檔必須保留以下所有名稱**，否則 app.js 初始化時 crash：
+
+| 名稱 | 消費者 | 說明 |
+|------|--------|------|
+| `seedState` | `app.js` line 5 | 初始/重設範例資料物件 |
+| `learningTopics` | `app.js` line 13 | 教學主題陣列 |
+| `learningChecklist` | `appReports.js` | 人肉驗證清單 |
+
+> `today` 語意屬於應用層，定義在 `app.js`（`const today = new Date()...`），**不放在 appSeedData.js**。
 
 ---
 

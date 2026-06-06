@@ -1,6 +1,29 @@
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const { createInventoryStore } = require("./core/inventoryStore");
 const { createInventoryAccess } = require("./services/inventoryAccess");
+
+// ── appSeedData 全域合約驗證 ──────────────────────────────────────────────────
+// appSeedData.js 以全域 const 提供這些名稱給 app.js 使用。
+// 改寫 appSeedData.js 前後都必須確保這些名稱仍然存在。
+{
+  const code = fs.readFileSync("./app/appSeedData.js", "utf8");
+  const sandbox = {};
+  // eslint-disable-next-line no-new-func
+  new Function(...Object.keys(sandbox), code)(...Object.values(sandbox));
+  // 注意：Node.js Function scope 看不到 const，改用 eval 在 global 確認語法無誤即可
+  // 真正的全域合約用靜態 grep 驗證：
+  const required = ["seedState", "learningTopics", "learningChecklist"];
+  for (const name of required) {
+    assert(
+      code.includes(`const ${name} `),
+      `appSeedData.js 必須定義 const ${name}`
+    );
+  }
+  // app.js 消費者清單（grep 確認）
+  const appCode = fs.readFileSync("./app/app.js", "utf8");
+  assert(appCode.includes("const today"), "app.js 必須自行定義 today（不依賴 appSeedData）");
+}
 
 let accessUser = { role: "sales", employeeId: 2, departmentId: 2 };
 const accessControl = createInventoryAccess({
