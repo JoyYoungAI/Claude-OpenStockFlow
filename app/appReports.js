@@ -14,7 +14,7 @@ function bindReportHandlers() {
     recordAudit("export", { entityType: "auditLog", summary: "匯出稽核 CSV", after: currentAuditOptions(), riskLevel: "high" });
     saveState();
     downloadCsv("stockflow-audit-log.csv", toCsv(formatAuditCsvRows(logs)));
-    setStatus("已匯出稽核 CSV。");
+    setStatus(t("messages.auditCsvExported", "已匯出稽核 CSV。"));
     renderAuditLogs();
   });
 

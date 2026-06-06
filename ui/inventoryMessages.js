@@ -7,6 +7,8 @@
     duplicatePartner: "往來對象儲存失敗，同類型名稱已存在。",
     categorySaveFailed: "產品類別儲存失敗，請確認代碼和名稱不可重複。",
     warehouseSaveFailed: "倉庫儲存失敗，請確認代碼和名稱不可重複。",
+    departmentSaveFailed: "部門資料未儲存，請確認代碼沒有重複。",
+    employeeSaveFailed: "員工資料未儲存，請確認員工編號沒有重複，且已選擇啟用中的部門。",
     purchaseOrderFailed: "採購單建立失敗，請確認商品仍啟用且明細有效。",
     saleOrderFailed: "銷售單建立失敗，請確認商品仍啟用且明細有效。",
     transferOrderFailed: "調撥單建立失敗，請確認來源與目的倉庫不同、商品仍啟用且明細有效。",

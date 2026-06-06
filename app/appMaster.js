@@ -19,13 +19,13 @@ function bindMasterHandlers() {
     });
     resetProductForm();
     saveState();
-    setStatus(`${wasEditing ? "已更新" : "已新增"}商品：${product.name}`);
+    setStatus(interpolate(t(wasEditing ? "messages.productUpdated" : "messages.productAdded", wasEditing ? "已更新商品：{name}" : "已新增商品：{name}"), { name: product.name }));
     render();
   });
 
   cancelProductEdit.addEventListener("click", () => {
     resetProductForm();
-    setStatus("已取消商品編輯。");
+    setStatus(t("messages.productEditCancelled", "已取消商品編輯。"));
     renderProducts();
   });
 
@@ -45,13 +45,13 @@ function bindMasterHandlers() {
     });
     resetPartnerForm();
     saveState();
-    setStatus(`${wasEditing ? "已更新" : "已新增"}往來對象：${partner.name}`);
+    setStatus(interpolate(t(wasEditing ? "messages.partnerUpdated" : "messages.partnerAdded", wasEditing ? "已更新往來對象：{name}" : "已新增往來對象：{name}"), { name: partner.name }));
     render();
   });
 
   cancelPartnerEdit.addEventListener("click", () => {
     resetPartnerForm();
-    setStatus("已取消往來對象編輯。");
+    setStatus(t("messages.partnerEditCancelled", "已取消往來對象編輯。"));
     renderPartners();
   });
 
@@ -68,7 +68,7 @@ function bindMasterHandlers() {
     categoryForm.reset();
     categoryForm.elements.sortOrder.value = "10";
     saveState();
-    setStatus(`已新增分類：${category.name}`);
+    setStatus(interpolate(t("messages.categoryAdded", "已新增分類：{name}"), { name: category.name }));
     render();
   });
 
@@ -84,7 +84,7 @@ function bindMasterHandlers() {
     });
     warehouseForm.reset();
     saveState();
-    setStatus(`已新增倉庫：${warehouse.name}`);
+    setStatus(interpolate(t("messages.warehouseAdded", "已新增倉庫：{name}"), { name: warehouse.name }));
     render();
   });
 
@@ -92,7 +92,7 @@ function bindMasterHandlers() {
     event.preventDefault();
     if (!requireAction("manageMasterData")) { return; }
     const department = store.addDepartment(Object.fromEntries(new FormData(departmentForm)));
-    if (!department) { setStatus("部門資料未儲存，請確認代碼沒有重複。", true); return; }
+    if (!department) { setStatus(ClaudeOpenStockFlowMessages.message("departmentSaveFailed"), true); return; }
     recordAudit("create", {
       entityType: "department", entityId: department.id,
       summary: `新增部門：${department.name}`,
@@ -100,7 +100,7 @@ function bindMasterHandlers() {
     });
     departmentForm.reset();
     saveState();
-    setStatus(`已新增部門：${department.name}`);
+    setStatus(interpolate(t("messages.departmentAdded", "已新增部門：{name}"), { name: department.name }));
     render();
   });
 
@@ -108,7 +108,7 @@ function bindMasterHandlers() {
     event.preventDefault();
     if (!requireAction("manageMasterData")) { return; }
     const employee = store.addEmployee(Object.fromEntries(new FormData(employeeForm)));
-    if (!employee) { setStatus("員工資料未儲存，請確認員工編號沒有重複，且已選擇啟用中的部門。", true); return; }
+    if (!employee) { setStatus(ClaudeOpenStockFlowMessages.message("employeeSaveFailed"), true); return; }
     recordAudit("create", {
       entityType: "employee", entityId: employee.id,
       summary: `新增員工：${employee.name}`,
@@ -117,7 +117,7 @@ function bindMasterHandlers() {
     });
     employeeForm.reset();
     saveState();
-    setStatus(`已新增員工：${employee.name}`);
+    setStatus(interpolate(t("messages.employeeAdded", "已新增員工：{name}"), { name: employee.name }));
     render();
   });
 
@@ -135,7 +135,7 @@ function bindMasterHandlers() {
     if (!product || !confirmAction("deactivateProduct", { name: product.name })) { return; }
     const deactivatedProduct = store.deactivateProduct(product.id);
     if (deactivatedProduct && deactivatedProduct.error === "PRODUCT_HAS_OPEN_DOCUMENTS") {
-      setStatus("此商品有進行中的單據（草稿 / 審核中），請結案後再停用。", true);
+      setStatus(t("messages.productDeactivationGuard", "此商品有進行中的單據（草稿 / 審核中），請結案後再停用。"), true);
     } else if (deactivatedProduct && !deactivatedProduct.error) {
       recordAudit("update", {
         entityType: "product", entityId: deactivatedProduct.id,
@@ -143,7 +143,7 @@ function bindMasterHandlers() {
         before: { active: true }, after: { active: false }, reason: "停用商品", riskLevel: "high"
       });
       saveState();
-      setStatus(`已停用商品：${deactivatedProduct.name}`);
+      setStatus(interpolate(t("messages.productDeactivated", "已停用商品：{name}"), { name: deactivatedProduct.name }));
       render();
     }
   });
@@ -168,7 +168,7 @@ function bindMasterHandlers() {
         before: { active: true }, after: { active: false }, reason: "停用往來對象", riskLevel: "medium"
       });
       saveState();
-      setStatus(`已停用往來對象：${deactivatedPartner.name}`);
+      setStatus(interpolate(t("messages.partnerDeactivated", "已停用往來對象：{name}"), { name: deactivatedPartner.name }));
       render();
     }
   });
@@ -187,7 +187,7 @@ function bindMasterHandlers() {
         before: { active: true }, after: { active: false }, reason: "停用分類", riskLevel: "medium"
       });
       saveState();
-      setStatus(`已停用分類：${deactivatedCategory.name}`);
+      setStatus(interpolate(t("messages.categoryDeactivated", "已停用分類：{name}"), { name: deactivatedCategory.name }));
       render();
     }
   });
@@ -200,7 +200,7 @@ function bindMasterHandlers() {
     if (!warehouse || !confirmAction("deactivateWarehouse", { name: warehouse.name })) { return; }
     const deactivatedWarehouse = store.deactivateWarehouse(warehouse.id);
     if (deactivatedWarehouse && deactivatedWarehouse.error === "WAREHOUSE_HAS_OPEN_DOCUMENTS") {
-      setStatus("此倉庫有進行中的單據（草稿 / 審核中），請結案後再停用。", true);
+      setStatus(t("messages.warehouseDeactivationGuard", "此倉庫有進行中的單據（草稿 / 審核中），請結案後再停用。"), true);
     } else if (deactivatedWarehouse && !deactivatedWarehouse.error) {
       recordAudit("update", {
         entityType: "warehouse", entityId: deactivatedWarehouse.id,
@@ -208,7 +208,7 @@ function bindMasterHandlers() {
         before: { active: true }, after: { active: false }, reason: "停用倉庫", riskLevel: "high"
       });
       saveState();
-      setStatus(`已停用倉庫：${deactivatedWarehouse.name}`);
+      setStatus(interpolate(t("messages.warehouseDeactivated", "已停用倉庫：{name}"), { name: deactivatedWarehouse.name }));
       render();
     }
   });
@@ -227,7 +227,7 @@ function bindMasterHandlers() {
         before: { active: true }, after: { active: false }, reason: "停用部門", riskLevel: "high"
       });
       saveState();
-      setStatus(`已停用部門：${deactivatedDepartment.name}`);
+      setStatus(interpolate(t("messages.departmentDeactivated", "已停用部門：{name}"), { name: deactivatedDepartment.name }));
       render();
     }
   });
@@ -248,7 +248,7 @@ function bindMasterHandlers() {
         reason: "停用員工", riskLevel: "high"
       });
       saveState();
-      setStatus(`已停用員工：${deactivatedEmployee.name}`);
+      setStatus(interpolate(t("messages.employeeDeactivated", "已停用員工：{name}"), { name: deactivatedEmployee.name }));
       render();
     }
   });
@@ -286,7 +286,7 @@ function renderProducts() {
 
 function startProductEdit(productId) {
   const product = store.listProducts().find((item) => item.id === productId);
-  if (!product) { setStatus("找不到要編輯的商品。", true); return; }
+  if (!product) { setStatus(t("messages.productNotFound", "找不到要編輯的商品。"), true); return; }
   editingProductId = product.id;
   productForm.elements.id.value = product.id;
   productForm.elements.sku.value = product.sku;
@@ -299,7 +299,7 @@ function startProductEdit(productId) {
   productFormTitle.textContent = t("actions.edit", "編輯") + t("tables.product", "商品");
   productSubmitButton.textContent = t("actions.updateProduct", "更新商品");
   cancelProductEdit.classList.remove("is-hidden");
-  setStatus(`正在編輯商品：${product.name}`);
+  setStatus(interpolate(t("messages.productEditing", "正在編輯商品：{name}"), { name: product.name }));
 }
 
 function resetProductForm() {
@@ -323,7 +323,7 @@ function renderPartners() { masterDataUi.renderPartners(); }
 
 function startPartnerEdit(partnerId) {
   const partner = store.listPartners().find((item) => item.id === partnerId);
-  if (!partner) { setStatus("找不到要編輯的往來對象。", true); return; }
+  if (!partner) { setStatus(t("messages.partnerNotFound", "找不到要編輯的往來對象。"), true); return; }
   editingPartnerId = partner.id;
   partnerForm.elements.id.value = partner.id;
   partnerForm.elements.role.value = partner.role;
@@ -334,7 +334,7 @@ function startPartnerEdit(partnerId) {
   partnerFormTitle.textContent = `${t("actions.edit", "編輯")}${t("headings.addPartner", "新增往來對象").replace(t("actions.addProduct", "新增").slice(0, 2), "")}`;
   partnerSubmitButton.textContent = t("actions.updatePartner", "更新對象");
   cancelPartnerEdit.classList.remove("is-hidden");
-  setStatus(`正在編輯往來對象：${partner.name}`);
+  setStatus(interpolate(t("messages.partnerEditing", "正在編輯往來對象：{name}"), { name: partner.name }));
 }
 
 function resetPartnerForm() {
