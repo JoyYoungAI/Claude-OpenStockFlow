@@ -132,7 +132,12 @@
         departmentDeactivated: "已停用部門：{name}",
         employeeAdded: "已新增員工：{name}",
         employeeDeactivated: "已停用員工：{name}",
-        auditCsvExported: "已匯出稽核 CSV。"
+        auditCsvExported: "已匯出稽核 CSV。",
+        inventoryCsvExported: "已匯出庫存 CSV。",
+        backupExported: "已匯出完整備份 JSON。",
+        backupRestored: "已完成整包還原，資料已重新載入。",
+        sampleDataReset: "已重置為範例資料。",
+        preferencesSaved: "已儲存格式與報表設定。"
       },
       prompts: {
         voidReason: "請填寫作廢原因，系統會保留原始單據紀錄。",

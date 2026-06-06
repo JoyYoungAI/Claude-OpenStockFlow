@@ -170,7 +170,7 @@ function bindEvents() {
     recordAudit("export", { entityType: "inventoryReport", summary: "匯出庫存 CSV", after: currentStockOptions(), riskLevel: "medium" });
     saveState();
     downloadCsv("inventory-report.csv", toCsv(formatInventoryCsvRows(store.exportInventoryRows(currentStockOptions()))));
-    setStatus("已匯出庫存 CSV。");
+    setStatus(t("messages.inventoryCsvExported", "已匯出庫存 CSV。"));
   });
 
   backupExportButton.addEventListener("click", () => {
@@ -178,7 +178,7 @@ function bindEvents() {
     recordAudit("export", { entityType: "backup", summary: "匯出完整備份 JSON", riskLevel: "high" });
     saveState();
     downloadJson(backupControl.backupFilename(today), storage.createStorageEnvelope(store.snapshot()));
-    setStatus("已匯出完整備份 JSON。");
+    setStatus(t("messages.backupExported", "已匯出完整備份 JSON。"));
   });
 
   backupFileInput.addEventListener("change", () => {
@@ -199,7 +199,7 @@ function bindEvents() {
     restoreButton.disabled = true;
     backupFileInput.value = "";
     saveState();
-    setStatus("已完成整包還原，資料已重新載入。");
+    setStatus(t("messages.backupRestored", "已完成整包還原，資料已重新載入。"));
     render();
   });
 
@@ -210,7 +210,7 @@ function bindEvents() {
     store = createInventoryStore(Object.assign({}, seedState, { auditLogs: previousAuditLogs }));
     recordAudit("restore", { entityType: "sampleData", summary: "重設為範例資料", reason: "使用者確認重設範例資料", riskLevel: "high" });
     saveState();
-    setStatus("已重置為範例資料。");
+    setStatus(t("messages.sampleDataReset", "已重置為範例資料。"));
     render();
   });
 }

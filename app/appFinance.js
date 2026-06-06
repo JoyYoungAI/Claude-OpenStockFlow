@@ -43,7 +43,7 @@ function bindFinanceHandlers() {
       riskLevel: "medium"
     });
     saveState();
-    setStatus("已儲存格式與報表設定。");
+    setStatus(t("messages.preferencesSaved", "已儲存格式與報表設定。"));
     render();
   });
 
