@@ -748,6 +748,10 @@
         var s = document.createElement("script");
         s.src = "./" + files[i] + ".js?v=" + V;
         s.onload = function () { load(i + 1); };
+        s.onerror = function () {
+          console.error("[Claude-OpenStockFlow] 載入失敗：" + files[i] + ".js — 請重新整理頁面");
+          load(i + 1);
+        };
         document.body.appendChild(s);
       }
       load(0);

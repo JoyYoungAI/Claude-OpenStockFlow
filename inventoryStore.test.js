@@ -4,25 +4,41 @@ const { createInventoryStore } = require("./core/inventoryStore");
 const { createInventoryAccess } = require("./services/inventoryAccess");
 
 // ── appSeedData 全域合約驗證 ──────────────────────────────────────────────────
-// appSeedData.js 以全域 const 提供這些名稱給 app.js 使用。
-// 改寫 appSeedData.js 前後都必須確保這些名稱仍然存在。
 {
   const code = fs.readFileSync("./app/appSeedData.js", "utf8");
-  const sandbox = {};
-  // eslint-disable-next-line no-new-func
-  new Function(...Object.keys(sandbox), code)(...Object.values(sandbox));
-  // 注意：Node.js Function scope 看不到 const，改用 eval 在 global 確認語法無誤即可
-  // 真正的全域合約用靜態 grep 驗證：
-  const required = ["seedState", "learningTopics", "learningChecklist"];
-  for (const name of required) {
-    assert(
-      code.includes(`const ${name} `),
-      `appSeedData.js 必須定義 const ${name}`
-    );
+  // 靜態 grep：確認必要 const 存在
+  for (const name of ["seedState", "learningTopics", "learningChecklist"]) {
+    assert(code.includes(`const ${name} `), `appSeedData.js 必須定義 const ${name}`);
   }
-  // app.js 消費者清單（grep 確認）
+  // app.js 不可依賴 appSeedData 提供 today
   const appCode = fs.readFileSync("./app/app.js", "utf8");
-  assert(appCode.includes("const today"), "app.js 必須自行定義 today（不依賴 appSeedData）");
+  assert(appCode.includes("const today"), "app.js 必須自行定義 today");
+
+  // seed data 結構 + 財務數字驗算
+  const fn = new Function(code + "\nreturn { seedState, learningTopics, learningChecklist };");
+  const { seedState: s, learningTopics: lt, learningChecklist: lc } = fn();
+  assert(Array.isArray(s.purchases[0].lines), "purchases 必須為 document format");
+  assert(Array.isArray(s.sales[0].lines),     "sales 必須為 document format");
+  assert(lt.length >= 4,  "learningTopics 至少 4 筆");
+  assert(lc.length >= 4,  "learningChecklist 至少 4 筆");
+
+  // 庫存數字驗算（confirmed 狀態）
+  const cp = s.purchases.filter(p => p.status === "confirmed");
+  const cs = s.sales.filter(d => d.status === "confirmed");
+  const netQty = (pid) => {
+    const inn = cp.flatMap(p => p.lines).filter(l => l.productId === pid).reduce((a, l) => a + l.receivedQuantity, 0);
+    const out = cs.flatMap(d => d.lines).filter(l => l.productId === pid).reduce((a, l) => a + l.shippedQuantity, 0);
+    return inn - out;
+  };
+  assert.equal(netQty(1), 37, "咖啡豆淨庫存應為 37");
+  assert.equal(netQty(2), 32, "冷泡茶淨庫存應為 32");
+  assert.equal(netQty(3), 12, "巧克力淨庫存應為 12");
+
+  // 財務金額驗算
+  assert.equal(s.payables[0].amount, 12550, "AP-001 金額錯");
+  assert.equal(s.payables[1].amount,  7900, "AP-002 金額錯");
+  assert.equal(s.receivables[0].amount, 5400, "AR-001 金額錯");
+  assert.equal(s.receivables[1].amount, 3210, "AR-002 金額錯");
 }
 
 let accessUser = { role: "sales", employeeId: 2, departmentId: 2 };
