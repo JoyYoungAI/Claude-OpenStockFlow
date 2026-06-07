@@ -920,6 +920,144 @@ assert.equal(models.docReturnStatus(null, []).status, "none", "docReturnStatus: 
   assert.equal(metaStore.listTransfers({})[0].status, "confirmed", "copyTransfer 包含 status");
 }
 
+// ── 完整循環：進貨→銷售→銷退回補→再銷售 ─────────────────────────────────────
+{
+  const cycleStore = createInventoryStore({
+    products: [{ id: 1, sku: "CY01", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 2, active: true }],
+    purchases: [], sales: []
+  });
+  cycleStore.addPurchaseOrder({ supplier: "S", date: "2026-07-01", items: [{ productId: 1, quantity: 5, unitCost: 100 }] });
+  assert.equal(cycleStore.inventoryReport().find((r) => r.productId === 1).onHand, 5, "CYCLE: 進貨後庫存 5");
+  const cycleSale = cycleStore.addSaleOrder({ customer: "C", date: "2026-07-02", items: [{ productId: 1, quantity: 5, unitPrice: 200 }] });
+  assert.equal(cycleStore.inventoryReport().find((r) => r.productId === 1).onHand, 0, "CYCLE: 銷售後庫存 0");
+  // 退回 2 件
+  cycleStore.addSalesReturn({ sourceLineId: cycleSale.lines[0].lineId, quantity: 2, reason: "Defect", date: "2026-07-03" });
+  assert.equal(cycleStore.inventoryReport().find((r) => r.productId === 1).onHand, 2, "CYCLE: 銷退後庫存回補至 2");
+  // 退回的庫存可以再賣
+  const resale = cycleStore.addSaleOrder({ customer: "C2", date: "2026-07-04", items: [{ productId: 1, quantity: 2, unitPrice: 200 }] });
+  assert.ok(resale && !resale.error, "CYCLE: 退回後可再次銷售");
+  assert.equal(cycleStore.inventoryReport().find((r) => r.productId === 1).onHand, 0, "CYCLE: 再售後庫存歸零");
+  // 庫存不足拒絕
+  assert.equal(cycleStore.addSaleOrder({ customer: "C3", date: "2026-07-05", items: [{ productId: 1, quantity: 1, unitPrice: 200 }] }).error, "INSUFFICIENT_STOCK", "CYCLE: 無庫存時拒絕");
+}
+
+// ── 庫存公式驗算：onHand = 進貨 - 銷售 + 盤調 + 銷退 - 進退 + 調入 - 調出 ────
+{
+  const formulaStore = createInventoryStore({
+    products: [{ id: 1, sku: "FM01", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+    warehouses: [
+      { id: 1, code: "A", name: "WH-A", type: "warehouse", note: "", active: true },
+      { id: 2, code: "B", name: "WH-B", type: "warehouse", note: "", active: true }
+    ],
+    purchases: [], sales: []
+  });
+  // 進貨 +20
+  formulaStore.addPurchaseOrder({ supplier: "S", date: "2026-08-01", warehouseId: 1, items: [{ productId: 1, quantity: 20, unitCost: 100 }] });
+  // 銷售 -7
+  const fmSale = formulaStore.addSaleOrder({ customer: "C", date: "2026-08-02", warehouseId: 1, items: [{ productId: 1, quantity: 7, unitPrice: 200 }] });
+  // 盤點調整 +3（counted 16, onHand 13 → +3）
+  formulaStore.addStockCount({ productId: 1, warehouseId: 1, countedQuantity: 16, reason: "Count", date: "2026-08-03" });
+  // 銷退 +2
+  formulaStore.addSalesReturn({ sourceLineId: fmSale.lines[0].lineId, quantity: 2, reason: "Return", date: "2026-08-04" });
+  // 進退 -3（退給供應商）
+  const fmPurchase = formulaStore.listPurchases({ includeVoided: false })[0];
+  formulaStore.addPurchaseReturn({ sourceLineId: fmPurchase.lines[0].lineId, quantity: 3, reason: "Vendor return", date: "2026-08-05" });
+  // 調出 -4 到 WH-B
+  formulaStore.addTransferOrder({ fromWarehouseId: 1, toWarehouseId: 2, date: "2026-08-06", items: [{ productId: 1, quantity: 4 }] });
+  // WH-A 公式: 20 - 7 + 3 + 2 - 3 - 4 = 11
+  const fmA = formulaStore.inventoryReport({ warehouseId: 1 }).find((r) => r.productId === 1);
+  assert.equal(fmA.onHand, 11, "FORMULA: WH-A 公式 20-7+3+2-3-4=11");
+  // WH-B 調入 +4
+  const fmB = formulaStore.inventoryReport({ warehouseId: 2 }).find((r) => r.productId === 1);
+  assert.equal(fmB.onHand, 4, "FORMULA: WH-B 調入 4");
+  // 全倉合計
+  const fmAll = formulaStore.inventoryReport().filter((r) => r.productId === 1).reduce((s, r) => s + r.onHand, 0);
+  assert.equal(fmAll, 15, "FORMULA: 全倉合計 11+4=15");
+}
+
+// ── 多次分批付款累積 ──────────────────────────────────────────────────────────
+{
+  const multiPayStore = createInventoryStore({
+    products: [{ id: 1, sku: "MP01", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+    purchases: [], sales: []
+  });
+  multiPayStore.addPurchaseOrder({ supplier: "S", date: "2026-09-01", dueDate: "2026-09-30", createPayable: true, items: [{ productId: 1, quantity: 10, unitCost: 100 }] });
+  assert.equal(multiPayStore.listPayables()[0].status, "open", "MP: 初始未付");
+  // 分三次付清
+  multiPayStore.addPayment({ direction: "out", targetType: "payable", targetId: 1, amount: 300, method: "Wire", date: "2026-09-10" });
+  assert.equal(multiPayStore.listPayables()[0].status, "partial", "MP: 第一筆後 partial");
+  multiPayStore.addPayment({ direction: "out", targetType: "payable", targetId: 1, amount: 400, method: "Wire", date: "2026-09-15" });
+  assert.equal(multiPayStore.listPayables()[0].paidAmount, 700, "MP: 累積 700");
+  assert.equal(multiPayStore.listPayables()[0].status, "partial", "MP: 仍 partial");
+  multiPayStore.addPayment({ direction: "out", targetType: "payable", targetId: 1, amount: 300, method: "Cash", date: "2026-09-20" });
+  assert.equal(multiPayStore.listPayables()[0].paidAmount, 1000, "MP: 累積 1000");
+  assert.equal(multiPayStore.listPayables()[0].status, "paid", "MP: 全額付清");
+  // 超付拒絕
+  assert.equal(multiPayStore.addPayment({ direction: "out", targetType: "payable", targetId: 1, amount: 1, method: "Cash", date: "2026-09-21" }).error, "PAYMENT_EXCEEDS_BALANCE", "MP: 超付拒絕");
+  assert.equal(multiPayStore.financeSummary({ month: "2026-09" }).cashOut, 1000, "MP: cashOut 1000");
+}
+
+// ── 進退時庫存不足應拒絕 ─────────────────────────────────────────────────────
+{
+  const prInsufficientStore = createInventoryStore({
+    products: [{ id: 1, sku: "PR01", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+    purchases: [], sales: []
+  });
+  prInsufficientStore.addPurchaseOrder({ supplier: "S", date: "2026-10-01", items: [{ productId: 1, quantity: 3, unitCost: 100 }] });
+  // 賣掉 2 件，只剩 1 件
+  prInsufficientStore.addSaleOrder({ customer: "C", date: "2026-10-02", items: [{ productId: 1, quantity: 2, unitPrice: 200 }] });
+  assert.equal(prInsufficientStore.inventoryReport().find((r) => r.productId === 1).onHand, 1, "PR: 進 3 賣 2 剩 1");
+  // 嘗試退進貨 3 件 → 庫存只有 1 件 → INSUFFICIENT_STOCK
+  const prLine = prInsufficientStore.listPurchases()[0];
+  assert.equal(prInsufficientStore.addPurchaseReturn({ sourceLineId: prLine.lines[0].lineId, quantity: 3, reason: "Too many", date: "2026-10-03" }).error, "INSUFFICIENT_STOCK", "PR: 進退超過庫存應拒絕");
+  // 退 1 件 ok
+  assert.ok(prInsufficientStore.addPurchaseReturn({ sourceLineId: prLine.lines[0].lineId, quantity: 1, reason: "One back", date: "2026-10-03" }), "PR: 退 1 件成功");
+  assert.equal(prInsufficientStore.inventoryReport().find((r) => r.productId === 1).onHand, 0, "PR: 退 1 後庫存歸零");
+}
+
+// ── 跨月 reportSummary 隔離 ───────────────────────────────────────────────────
+{
+  const crossMonthStore = createInventoryStore({
+    products: [{ id: 1, sku: "CM01", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+    purchases: [], sales: []
+  });
+  crossMonthStore.addPurchaseOrder({ supplier: "S", date: "2026-10-15", items: [{ productId: 1, quantity: 10, unitCost: 100 }] });
+  crossMonthStore.addSaleOrder({ customer: "C", date: "2026-10-20", items: [{ productId: 1, quantity: 3, unitPrice: 200 }] });
+  crossMonthStore.addSaleOrder({ customer: "C", date: "2026-11-05", items: [{ productId: 1, quantity: 2, unitPrice: 220 }] });
+  const oct = crossMonthStore.reportSummary({ month: "2026-10" });
+  assert.equal(oct.salesQuantity, 3, "CM: 10月銷售量 3");
+  assert.equal(oct.salesRevenue, 600, "CM: 10月收入 600");
+  assert.equal(oct.grossProfit, 300, "CM: 10月毛利 3*(200-100)=300");
+  const nov = crossMonthStore.reportSummary({ month: "2026-11" });
+  assert.equal(nov.salesQuantity, 2, "CM: 11月銷售量 2");
+  assert.equal(nov.salesRevenue, 440, "CM: 11月收入 440");
+  assert.equal(nov.grossProfit, 240, "CM: 11月毛利 2*(220-100)=240");
+  // 全月合計
+  const all = crossMonthStore.reportSummary({});
+  assert.equal(all.salesQuantity, 5, "CM: 全期銷售量 5");
+  assert.equal(all.salesRevenue, 1040, "CM: 全期收入 1040");
+}
+
+// ── 同商品多批進貨成本快照：銷售 costBasis 不受後續進貨影響 ─────────────────
+{
+  const snapshotStore = createInventoryStore({
+    products: [{ id: 1, sku: "SN01", name: "Item", category: "Food", unit: "pc", cost: 100, price: 200, safetyStock: 0, active: true }],
+    purchases: [], sales: []
+  });
+  snapshotStore.addPurchaseOrder({ supplier: "S", date: "2026-11-01", items: [{ productId: 1, quantity: 5, unitCost: 100 }] });
+  const sn1 = snapshotStore.addSaleOrder({ customer: "C", date: "2026-11-02", items: [{ productId: 1, quantity: 2, unitPrice: 200 }] });
+  assert.equal(sn1.lines[0].costBasis.unitCost, 100, "SNAP: 第一筆銷售成本快照 100");
+  // 更高成本進貨
+  snapshotStore.addPurchaseOrder({ supplier: "S", date: "2026-11-03", items: [{ productId: 1, quantity: 5, unitCost: 180 }] });
+  // 第一筆 costBasis 不變
+  assert.equal(snapshotStore.snapshot().sales[0].lines[0].costBasis.unitCost, 100, "SNAP: 後續進貨不改變舊銷售成本快照");
+  // 新銷售使用新成本
+  const sn2 = snapshotStore.addSaleOrder({ customer: "C", date: "2026-11-04", items: [{ productId: 1, quantity: 2, unitPrice: 220 }] });
+  assert.equal(sn2.lines[0].costBasis.unitCost, 180, "SNAP: 新銷售成本快照反映最新進貨");
+  // 毛利分月隔離
+  assert.equal(snapshotStore.reportSummary({ month: "2026-11" }).grossProfit, (200 - 100) * 2 + (220 - 180) * 2, "SNAP: 毛利 = 200 + 80 = 280");
+}
+
 console.log("All tests passed.");
 
 console.log("inventoryStore tests passed");
