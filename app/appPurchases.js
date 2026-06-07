@@ -19,7 +19,7 @@ function bindPurchaseHandlers() {
       note: data.note,
       items: collectOrderItems(data, "unitCost")
     });
-    if (!purchase) { setStatus(ClaudeOpenStockFlowMessages.transactionError(purchase, "purchaseOrderFailed"), true); return; }
+    if (!purchase) { setStatus(ClaudeOpenStockFlowMessages.message("purchaseOrderFailed"), true); return; }
     recordAudit("create", {
       entityType: "purchase", documentNo: purchase.documentNo,
       relatedDocumentNos: [purchase.documentNo],

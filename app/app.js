@@ -270,7 +270,6 @@ function handleDocumentWorkflow(type, id, workflowAction) {
   if (!result) { setStatus(t("messages.approvalActionFailed", "單據狀態無法更新。"), true); return; }
   if (result.error === "INSUFFICIENT_STOCK") { setStatus(ClaudeOpenStockFlowMessages.message("insufficientStock"), true); return; }
   if (result.error) { setStatus(t("messages.approvalActionFailed", "單據狀態無法更新。"), true); return; }
-  saveState();
   recordAudit("update", {
     entityType: type, entityId: id,
     documentNo: result[0] && result[0].documentNo,
@@ -289,7 +288,6 @@ function handleVoidReversal(type, id) {
   if (!requireAction("voidDocument", { targetDocument })) { return; }
   const result = store.createVoidReversal(type, id, { user: currentUser.name });
   if (!result) { setStatus(t("messages.voidReversalNotFound", "找不到可建立沖銷事件的作廢單據。"), true); return; }
-  saveState();
   recordAudit("create", {
     entityType: "voidReversal", entityId: result.id, documentNo: result.documentNo,
     sourceDocumentNo: result.sourceDocumentNo, relatedDocumentNos: [result.sourceDocumentNo, result.documentNo],
@@ -313,7 +311,6 @@ function handleReturn(type, id) {
   if (!result) { setStatus(t("messages.returnSaveFailed", "退貨單無法建立。"), true); return; }
   if (result.error === "RETURN_QUANTITY_EXCEEDS_SOURCE") { setStatus(t("messages.returnQuantityExceeded", "退貨數量不可超過原單剩餘可退數量。"), true); return; }
   if (result.error === "INSUFFICIENT_STOCK") { setStatus(ClaudeOpenStockFlowMessages.message("insufficientStock"), true); return; }
-  saveState();
   recordAudit("create", {
     entityType: type === "purchase" ? "purchaseReturn" : "salesReturn",
     entityId: result.id, documentNo: result.documentNo,
@@ -349,7 +346,6 @@ function handleConvertToLoan(lineId) {
   });
   if (!result) { setStatus(t("messages.convertToLoanFailed", "轉借貨失敗，請確認銷售單狀態與借貨倉設定。"), true); return; }
   if (result.error === "NO_RETURNABLE_QUANTITY") { setStatus(t("messages.noConvertibleQuantity", "此單身已無可轉換數量。"), true); return; }
-  saveState();
   recordAudit("create", {
     entityType: "loanConversion", documentNo: result.returnDocumentNo,
     relatedDocumentNos: [result.returnDocumentNo, result.transferDocumentNo],
@@ -371,7 +367,6 @@ function handleDocumentOwnerReassign(type, id) {
     : store.updateSaleOwner(id, { ownerEmployeeId: currentUser.employeeId, ownerDepartmentId: currentUser.departmentId, lastEditedByEmployeeId: currentUser.employeeId });
   if (!result) { setStatus(t("messages.ownerReassignFailed", "單據負責人無法更新。"), true); return; }
   if (result.error === "DOCUMENT_CLOSED") { setStatus(t("messages.ownerReassignClosed", "這張單據已正式成立或已結束，不能直接改負責人。"), true, "warning"); return; }
-  saveState();
   recordAudit("update", {
     entityType: type, entityId: id,
     documentNo: result[0] && result[0].documentNo,

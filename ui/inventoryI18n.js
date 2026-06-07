@@ -229,6 +229,7 @@
         requestVoid: "申請作廢",
         cancelVoid: "取消作廢申請",
         createReturn: "退貨",
+        convertToLoan: "轉借貨",
         createReversal: "建立沖銷",
         takeDocumentOwnership: "改由我負責",
         exportInventoryCsv: "匯出庫存 CSV",
@@ -495,7 +496,9 @@
         noAuditLogs: "尚無符合條件的稽核紀錄。",
         noDepartments: "尚未建立部門。",
         noEmployees: "尚未建立員工。",
-        noDepartmentOptions: "尚無可用部門"
+        noDepartmentOptions: "尚無可用部門",
+        noPurchaseReturns: "尚無進貨退貨紀錄。",
+        noSalesReturns: "尚無銷售退貨紀錄。"
       },
       reports: {
         receivableBalance: "應收餘額",

@@ -58,7 +58,8 @@ function bindSaleHandlers() {
     if (!confirmAction("voidSale")) { return; }
     const reason = prompt(t("prompts.voidReason", "請填寫作廢原因，系統會保留原始單據紀錄。"));
     if (!String(reason || "").trim()) { setStatus(t("messages.voidReasonRequired", "作廢需要填寫原因，已取消。"), true); return; }
-    if (store.removeSale(Number(button.dataset.removeSaleId), { reason, user: currentUser.name })) {
+    const removeResult = store.removeSale(Number(button.dataset.removeSaleId), { reason, user: currentUser.name });
+    if (removeResult) {
       recordAudit("delete", {
         entityType: "sale", entityId: button.dataset.removeSaleId,
         summary: "作廢銷售紀錄", reason, riskLevel: "high"
@@ -66,6 +67,8 @@ function bindSaleHandlers() {
       saveState();
       setStatus(t("messages.saleVoided", "已作廢銷售紀錄，原單已保留並排除於有效庫存。"));
       render();
+    } else {
+      setStatus(t("messages.approvalActionFailed", "單據狀態無法更新。"), true);
     }
   });
 
@@ -114,7 +117,7 @@ function renderSales() {
           ? `<button class="text-button" type="button" data-return-sale-id="${line.lineId}" title="${escapeAttr(t("tooltips.salesReturn", "建立銷售退貨，會回補庫存並調整應收。"))}">${t("actions.createReturn", "退貨")}</button>`
           : canReturn ? `<button class="text-button" type="button" disabled title="${escapeAttr(t("tooltips.returnCompleted", "此單據已無可退數量。"))}">${t("actions.createReturn", "退貨")}</button>` : "";
         const convertLoanBtn = canReturn && remaining > 0
-          ? `<button class="text-button" type="button" data-convert-to-loan-line-id="${line.lineId}" title="${escapeAttr(t("tooltips.convertToLoan", "銷貨轉借貨：建立退貨單並調撥至借貨倉。"))}">轉借貨</button>`
+          ? `<button class="text-button" type="button" data-convert-to-loan-line-id="${line.lineId}" title="${escapeAttr(t("tooltips.convertToLoan", "銷貨轉借貨：建立退貨單並調撥至借貨倉。"))}">${t("actions.convertToLoan", "轉借貨")}</button>`
           : "";
         return `<div class="record-meta">${escapeHtml(productName(line.productId))} × ${formatQuantity(line.quantity)} / ${formatRestrictedMoney(line.unitPrice, "viewSalesRevenue")}${returned ? ` / ${t("documentStatus.returnedQuantity", "已退")} ${formatQuantity(returned)}` : ""} ${returnBtn}${convertLoanBtn}</div>`;
       }).join("");
