@@ -106,27 +106,45 @@
       : `<div class="empty">${text("emptyStates.noWarehouseDistribution", "目前沒有跨倉分布資料。")}</div>`;
 
     document.querySelector("#report-sales-list").innerHTML = sales.length
-      ? sales.map((item) => `
-        <article class="record-card">
-          <div>
-            <strong>${escapeHtml(productName(item.productId))}</strong>
-            <div class="record-meta">${escapeHtml(item.documentNo || text("common.noDocumentNo", "無單號"))} / ${formatDate(item.date)} / ${escapeHtml(warehouseName(item.warehouseId))} / ${escapeHtml(item.customer || text("common.notFilled", "未填") + text("common.customer", "客戶"))} / ${formatQuantity(item.quantity)} ${text("common.pieceUnit", "件")}</div>
-          </div>
-          <span class="amount expense">${money(item.quantity * item.unitPrice, "viewSalesRevenue")}</span>
-        </article>
-      `).join("")
+      ? sales.map((item) => {
+        const lines = item.lines || [];
+        const firstLine = lines[0] || {};
+        const productDisplay = lines.length > 1
+          ? `${productName(firstLine.productId)} ${text("common.andMore", "等")} ${lines.length} ${text("common.itemUnit", "項")}`
+          : productName(firstLine.productId);
+        const totalAmount = lines.reduce((sum, l) => sum + (l.quantity || 0) * (l.unitPrice || 0), 0);
+        const totalQuantity = lines.reduce((sum, l) => sum + (l.quantity || 0), 0);
+        return `
+          <article class="record-card">
+            <div>
+              <strong>${escapeHtml(productDisplay)}</strong>
+              <div class="record-meta">${escapeHtml(item.documentNo || text("common.noDocumentNo", "無單號"))} / ${formatDate(item.date)} / ${escapeHtml(warehouseName(item.warehouseId))} / ${escapeHtml(item.customerName || text("common.notFilled", "未填") + text("common.customer", "客戶"))} / ${formatQuantity(totalQuantity)} ${text("common.pieceUnit", "件")}</div>
+            </div>
+            <span class="amount expense">${money(totalAmount, "viewSalesRevenue")}</span>
+          </article>
+        `;
+      }).join("")
       : `<div class="empty">${text("emptyStates.noReportSales", "這個期間沒有銷售資料。")}</div>`;
 
     document.querySelector("#report-purchase-list").innerHTML = purchases.length
-      ? purchases.map((item) => `
-        <article class="record-card">
-          <div>
-            <strong>${escapeHtml(productName(item.productId))}</strong>
-            <div class="record-meta">${escapeHtml(item.documentNo || text("common.noDocumentNo", "無單號"))} / ${formatDate(item.date)} / ${escapeHtml(warehouseName(item.warehouseId))} / ${escapeHtml(item.supplier || text("common.notFilled", "未填") + text("common.supplier", "供應商"))} / ${formatQuantity(item.quantity)} ${text("common.pieceUnit", "件")}</div>
-          </div>
-          <span class="amount income">${money(item.quantity * item.unitCost, "viewCost")}</span>
-        </article>
-      `).join("")
+      ? purchases.map((item) => {
+        const lines = item.lines || [];
+        const firstLine = lines[0] || {};
+        const productDisplay = lines.length > 1
+          ? `${productName(firstLine.productId)} ${text("common.andMore", "等")} ${lines.length} ${text("common.itemUnit", "項")}`
+          : productName(firstLine.productId);
+        const totalAmount = lines.reduce((sum, l) => sum + (l.quantity || 0) * (l.unitCost || 0), 0);
+        const totalQuantity = lines.reduce((sum, l) => sum + (l.quantity || 0), 0);
+        return `
+          <article class="record-card">
+            <div>
+              <strong>${escapeHtml(productDisplay)}</strong>
+              <div class="record-meta">${escapeHtml(item.documentNo || text("common.noDocumentNo", "無單號"))} / ${formatDate(item.date)} / ${escapeHtml(warehouseName(item.warehouseId))} / ${escapeHtml(item.supplierName || text("common.notFilled", "未填") + text("common.supplier", "供應商"))} / ${formatQuantity(totalQuantity)} ${text("common.pieceUnit", "件")}</div>
+            </div>
+            <span class="amount income">${money(totalAmount, "viewCost")}</span>
+          </article>
+        `;
+      }).join("")
       : `<div class="empty">${text("emptyStates.noReportPurchases", "這個期間沒有進貨資料。")}</div>`;
 
     const ranking = store.grossProfitRanking(8);
