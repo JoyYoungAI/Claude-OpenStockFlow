@@ -331,7 +331,7 @@ function startPartnerEdit(partnerId) {
   partnerForm.elements.contact.value = partner.contact;
   partnerForm.elements.phone.value = partner.phone;
   partnerForm.elements.note.value = partner.note;
-  partnerFormTitle.textContent = `${t("actions.edit", "編輯")}${t("headings.addPartner", "新增往來對象").replace(t("actions.addProduct", "新增").slice(0, 2), "")}`;
+  partnerFormTitle.textContent = t("headings.editPartner", "編輯往來對象");
   partnerSubmitButton.textContent = t("actions.updatePartner", "更新對象");
   cancelPartnerEdit.classList.remove("is-hidden");
   setStatus(interpolate(t("messages.partnerEditing", "正在編輯往來對象：{name}"), { name: partner.name }));

@@ -7,8 +7,8 @@ const storage = ClaudeOpenStockFlowStorage.createInventoryStorage({ seedState, a
 const initialLoad = storage.loadState();
 let store = createInventoryStore(initialLoad.state);
 const accessControl = ClaudeOpenStockFlowAccess.createInventoryAccess({
-  getStore: () => store,
-  getCurrentUser: () => currentUser
+  getCurrentUser: () => currentUser,
+  listPermissionScopes: (employeeId) => store && store.listPermissionScopes ? store.listPermissionScopes({ employeeId, activeOnly: true }) : []
 });
 let activeTab = "overview";
 let activeLearningTopicId = learningTopics[0].id;

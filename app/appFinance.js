@@ -81,7 +81,7 @@ function renderFinance() {
       <article class="record-card">
         <div>
           <strong>${item.direction === "in" ? t("common.paymentIn", "收款") : t("common.paymentOut", "付款")} / ${escapeHtml(item.method || t("common.notFilled", "未填") + t("fields.method", "方式"))}</strong>
-          <div class="record-meta">${formatDate(item.date)} / ${escapeHtml(item.targetType)} #${item.targetId} / ${escapeHtml(item.note || t("common.noNote", "無備註"))}</div>
+          <div class="record-meta">${formatDate(item.date)} / ${item.targetType === "receivable" ? t("common.receivable", "應收") : t("common.payable", "應付")} #${item.targetId} / ${escapeHtml(item.note || t("common.noNote", "無備註"))}</div>
         </div>
         <span class="amount ${item.direction === "in" ? "income" : "expense"}">${canViewCompanyFinance ? formatMoney(item.amount) : restrictedText()}</span>
       </article>

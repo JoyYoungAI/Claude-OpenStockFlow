@@ -171,7 +171,7 @@
     }
 
     function modulePermissionReason(moduleName) {
-      return options.interpolate("目前角色「{role}」不能查看「{module}」內容。", {
+      return options.interpolate(options.t("operationGuards.moduleDenied", "目前角色「{role}」不能查看「{module}」內容。"), {
         role: currentRoleLabel(),
         module: options.moduleLabel(moduleName)
       });

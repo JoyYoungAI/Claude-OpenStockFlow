@@ -203,7 +203,8 @@
         noWarehouse: "請先建立並啟用倉庫。",
         noProductOrWarehouse: "請先建立並啟用商品與倉庫。",
         noPaymentTarget: "目前沒有可沖帳的應收或應付項目。",
-        roleDenied: "目前角色「{role}」沒有「{action}」權限。"
+        roleDenied: "目前角色「{role}」沒有「{action}」權限。",
+        moduleDenied: "目前角色「{role}」不能查看「{module}」內容。"
       },
       actions: {
         addProduct: "新增商品",
@@ -405,6 +406,7 @@
         warehouseList: "倉庫列表",
         backupData: "資料備份",
         addPartner: "新增往來對象",
+        editPartner: "編輯往來對象",
         partnerList: "往來對象列表",
         addPurchaseOrder: "新增進貨單",
         purchaseRecords: "進貨紀錄",
