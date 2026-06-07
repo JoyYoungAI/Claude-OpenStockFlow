@@ -61,6 +61,8 @@
         deactivateCategory: "確定要停用分類「{name}」嗎？\n\n歷史商品資料會保留。",
         deactivateWarehouse: "確定要停用倉庫「{name}」嗎？\n\n歷史紀錄會保留，但新增單據時不能再選用。",
         deactivatePartner: "確定要停用往來對象「{name}」嗎？\n\n歷史紀錄會保留，但新增單據時不會再作為建議選項。",
+        deactivateDepartment: "確定要停用部門「{name}」嗎？\n\n歷史紀錄會保留，但員工所屬部門仍保持原始設定。",
+        deactivateEmployee: "確定要停用員工「{name}」嗎？\n\n歷史紀錄會保留，該人員將無法登入系統。",
         voidPurchase: "確定要作廢這筆進貨紀錄嗎？\n\n庫存會重新計算；若會造成負庫存，系統會拒絕作廢。",
         voidSale: "確定要作廢這筆銷售紀錄嗎？\n\n庫存會回補，相關報表也會重新計算。"
       },
