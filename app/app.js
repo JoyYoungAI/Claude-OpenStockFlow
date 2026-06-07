@@ -152,7 +152,7 @@ function bindEvents() {
     currentUser = currentUserFromEmployee(Number(employeeSelect.value));
     saveCurrentUser();
     ensureActiveTabAllowed();
-    setStatus(`已切換本機人員：${currentUser.name} / ${currentRoleLabel()}。`);
+    setStatus(interpolate(t("messages.userSwitched", "已切換本機人員：{name} / {role}。"), { name: currentUser.name, role: currentRoleLabel() }));
     render();
   });
 
@@ -608,12 +608,12 @@ function warehouseName(warehouseId) { const warehouse = store.listWarehouses().f
 function categoryName(categoryId) { const category = store.listProductCategories().find((item) => item.id === Number(categoryId)); return category ? category.name : ""; }
 
 function movementBadge(type) {
-  if (type === "purchase") { return '<span class="badge">進貨</span>'; }
-  if (type === "adjustment") { return '<span class="badge neutral">調整</span>'; }
-  if (type === "transfer") { return '<span class="badge neutral">調撥</span>'; }
-  if (type === "salesReturn") { return '<span class="badge neutral">銷退</span>'; }
-  if (type === "purchaseReturn") { return '<span class="badge warn">進退</span>'; }
-  return '<span class="badge warn">銷售</span>';
+  if (type === "purchase") { return `<span class="badge">${t("common.purchase", "進貨")}</span>`; }
+  if (type === "adjustment") { return `<span class="badge neutral">${t("common.adjustment", "調整")}</span>`; }
+  if (type === "transfer") { return `<span class="badge neutral">${t("common.transfer", "調撥")}</span>`; }
+  if (type === "salesReturn") { return `<span class="badge neutral">${t("common.salesReturn", "銷退")}</span>`; }
+  if (type === "purchaseReturn") { return `<span class="badge warn">${t("common.purchaseReturn", "進退")}</span>`; }
+  return `<span class="badge warn">${t("common.sale", "銷售")}</span>`;
 }
 
 function warehouseTypeLabel(type) {

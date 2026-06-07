@@ -24,7 +24,7 @@
 
       options.document.querySelectorAll("[data-category-select]").forEach((select) => {
         const selected = select.value;
-        select.innerHTML = optionRows || '<option value="0">一般</option>';
+        select.innerHTML = optionRows || `<option value="0">${options.t("fields.defaultCategory", "一般")}</option>`;
         if (selected && categories.some((cat) => String(cat.id) === selected)) {
           select.value = selected;
         }
@@ -39,7 +39,7 @@
 
       options.document.querySelectorAll("[data-department-select]").forEach((select) => {
         const selected = select.value;
-        select.innerHTML = optionRows || '<option value="">尚無可用部門</option>';
+        select.innerHTML = optionRows || `<option value="">${options.t("emptyStates.noDepartmentOptions", "尚無可用部門")}</option>`;
         if (selected && Array.from(select.options).some((option) => option.value === selected)) {
           select.value = selected;
         }
@@ -122,12 +122,12 @@
             <td>${options.statusBadge(department.active)}</td>
             <td>
               <div class="table-actions">
-                ${department.active ? `<button class="text-button action-danger" type="button" title="停用部門；歷史單據仍保留原部門線索。" data-deactivate-department-id="${department.id}">${options.t("actions.deactivate", "停用")}</button>` : ""}
+                ${department.active ? `<button class="text-button action-danger" type="button" title="${options.escapeAttr(options.t("tooltips.deactivateDepartment", "停用部門；歷史單據仍保留原部門線索。"))}" data-deactivate-department-id="${department.id}">${options.t("actions.deactivate", "停用")}</button>` : ""}
               </div>
             </td>
           </tr>
         `).join("")
-        : '<tr><td colspan="6" class="empty">尚未建立部門。</td></tr>';
+        : `<tr><td colspan="6" class="empty">${options.t("emptyStates.noDepartments", "尚未建立部門。")}</td></tr>`;
     }
 
     function renderEmployees() {
@@ -140,17 +140,17 @@
           <tr>
             <td>${options.escapeHtml(employee.employeeNo)}</td>
             <td>${options.escapeHtml(employee.name)}</td>
-            <td>${options.escapeHtml(department ? department.name : "未指定部門")}</td>
+            <td>${options.escapeHtml(department ? department.name : options.t("common.unassignedDepartment", "未指定部門"))}</td>
             <td>${options.escapeHtml(options.roleLabel(employee.role))}</td>
             <td>${options.statusBadge(employee.active)}</td>
             <td>
               <div class="table-actions">
-                ${employee.active ? `<button class="text-button action-danger" type="button" title="停用員工；歷史操作仍會保留原操作者。" data-deactivate-employee-id="${employee.id}">${options.t("actions.deactivate", "停用")}</button>` : ""}
+                ${employee.active ? `<button class="text-button action-danger" type="button" title="${options.escapeAttr(options.t("tooltips.deactivateEmployee", "停用員工；歷史操作仍會保留原操作者。"))}" data-deactivate-employee-id="${employee.id}">${options.t("actions.deactivate", "停用")}</button>` : ""}
               </div>
             </td>
           </tr>`;
         }).join("")
-        : '<tr><td colspan="6" class="empty">尚未建立員工。</td></tr>';
+        : `<tr><td colspan="6" class="empty">${options.t("emptyStates.noEmployees", "尚未建立員工。")}</td></tr>`;
     }
 
     function renderPartners() {

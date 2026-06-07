@@ -32,9 +32,9 @@ function voidDetailPanel(item, type) {
   const effectText = type === "purchase" ? t("voidEffect.purchase", "進貨庫存與應付帳款已從有效資料排除，沖銷事件建立後可追溯原單。") : t("voidEffect.sale", "銷售出貨、應收帳款與毛利已從有效資料排除，沖銷事件建立後可追溯原單。");
   return `
     <div class="void-detail" data-void-ui-source-reversal-link>
-      <span data-void-ui-reason-visible>原單 ${escapeHtml(sourceDocumentNo)} / 沖銷 ${escapeHtml(reversalDocumentNo)}</span>
-      <span>原因 ${escapeHtml(item.voidReason || t("common.notFilled", "未填"))} / ${escapeHtml(item.voidedBy || t("common.localUser", "本機使用者"))} / ${escapeHtml(item.voidedAt ? formatDate(item.voidedAt.slice(0, 10)) : t("common.notFilled", "未填"))}</span>
-      <span>關聯 ${escapeHtml(Array.from(new Set(relatedDocumentNos)).join(" / ") || t("common.notFilled", "未填"))}</span>
+      <span data-void-ui-reason-visible>${t("common.sourceDocument", "原單")} ${escapeHtml(sourceDocumentNo)} / ${t("common.reversal", "沖銷")} ${escapeHtml(reversalDocumentNo)}</span>
+      <span>${t("common.reason", "原因")} ${escapeHtml(item.voidReason || t("common.notFilled", "未填"))} / ${escapeHtml(item.voidedBy || t("common.localUser", "本機使用者"))} / ${escapeHtml(item.voidedAt ? formatDate(item.voidedAt.slice(0, 10)) : t("common.notFilled", "未填"))}</span>
+      <span>${t("common.related", "關聯")} ${escapeHtml(Array.from(new Set(relatedDocumentNos)).join(" / ") || t("common.notFilled", "未填"))}</span>
       <span>${escapeHtml(effectText)}</span>
     </div>
   `;

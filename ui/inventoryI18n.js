@@ -30,6 +30,8 @@
         deactivateProduct: "停用商品；歷史紀錄保留，但新增單據不能再選用。",
         deactivateCategory: "停用分類；歷史商品資料保留。",
         deactivateWarehouse: "停用倉庫；歷史紀錄保留，但新增單據不能再選用。",
+        deactivateDepartment: "停用部門；歷史單據仍保留原部門線索。",
+        deactivateEmployee: "停用員工；歷史操作仍會保留原操作者。",
         editPartner: "編輯這筆往來對象資料。",
         deactivatePartner: "停用往來對象；歷史紀錄保留。",
         voidPurchase: "作廢這筆進貨紀錄，庫存會重新計算。",
@@ -138,7 +140,8 @@
         backupExported: "已匯出完整備份 JSON。",
         backupRestored: "已完成整包還原，資料已重新載入。",
         sampleDataReset: "已重置為範例資料。",
-        preferencesSaved: "已儲存格式與報表設定。"
+        preferencesSaved: "已儲存格式與報表設定。",
+        userSwitched: "已切換本機人員：{name} / {role}。"
       },
       prompts: {
         voidReason: "請填寫作廢原因，系統會保留原始單據紀錄。",
@@ -275,7 +278,14 @@
         source: "來源",
         andMore: "等",
         unknownProduct: "未知商品",
-        restricted: "未開放"
+        restricted: "未開放",
+        sourceDocument: "原單",
+        reversal: "沖銷",
+        reason: "原因",
+        related: "關聯",
+        transfer: "調撥",
+        salesReturn: "銷退",
+        purchaseReturn: "進退"
       },
       warehouseTypes: {
         store: "門市",
@@ -357,7 +367,8 @@
         amount: "金額",
         method: "方式",
         reportMonth: "報表月份",
-        unlinkedPartner: "— 未連結 —"
+        unlinkedPartner: "— 未連結 —",
+        defaultCategory: "一般"
       },
       placeholders: {
         productSearch: "搜尋 SKU / 名稱",
@@ -481,7 +492,10 @@
         noStockRows: "沒有符合條件的庫存資料。",
         noBackupFile: "尚未選擇備份檔。",
         noLearningTopics: "沒有符合條件的教學章節。",
-        noAuditLogs: "尚無符合條件的稽核紀錄。"
+        noAuditLogs: "尚無符合條件的稽核紀錄。",
+        noDepartments: "尚未建立部門。",
+        noEmployees: "尚未建立員工。",
+        noDepartmentOptions: "尚無可用部門"
       },
       reports: {
         receivableBalance: "應收餘額",
