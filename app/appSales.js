@@ -124,7 +124,7 @@ function renderSales() {
       return `
         <article class="record-card">
           <div>
-            <strong>${escapeHtml(doc.documentNo || t("common.noDocumentNo", "無單號"))} ${documentStatusBadge(doc)}</strong>
+            <strong>${escapeHtml(doc.documentNo || t("common.noDocumentNo", "無單號"))} ${documentStatusBadge(doc)}${returnStatusBadge(doc, allReturns)}</strong>
             <div class="record-meta">${formatDate(doc.date)} / ${escapeHtml(warehouseName(doc.warehouseId))} / ${customerDisplay} / ${escapeHtml(documentResponsibilityText(doc))} / ${escapeHtml(doc.note || t("common.noNote", "無備註"))}${voidMeta(doc)}</div>
             ${linesHtml}
             ${voidDetailPanel(doc, "sale")}

@@ -326,7 +326,9 @@
         voided: "已作廢",
         reversed: "已沖銷",
         voidReason: "作廢原因",
-        returnedQuantity: "已退"
+        returnedQuantity: "已退",
+        partialReturn: "部分退貨",
+        fullReturn: "已全退"
       },
       fields: {
         sku: "SKU",

@@ -14,6 +14,13 @@ function documentStatusBadge(item) {
   return `<span class="badge">${t("documentStatus.confirmed", "已確認")}</span>`;
 }
 
+function returnStatusBadge(doc, allReturns) {
+  const rs = ClaudeOpenStockFlowModels.docReturnStatus(doc, allReturns);
+  if (rs.status === "partial") { return `<span class="badge warn">${t("documentStatus.partialReturn", "部分退貨")}</span>`; }
+  if (rs.status === "full") { return `<span class="badge neutral">${t("documentStatus.fullReturn", "已全退")}</span>`; }
+  return "";
+}
+
 function voidMeta(item) {
   if (!isVoidedDocument(item)) { return ""; }
   const reason = item.voidReason || t("common.notFilled", "未填");
