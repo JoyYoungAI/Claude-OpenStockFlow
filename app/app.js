@@ -162,6 +162,7 @@ function bindEvents() {
   bindAdjustmentHandlers();
   bindFinanceHandlers();
   bindReportHandlers();
+  bindFindHandlers();
 
   refreshButton.addEventListener("click", () => { window.location.reload(); });
 
@@ -486,6 +487,7 @@ function render() {
   renderReports();
   renderAuditLogs();
   renderLearning();
+  renderFind();
   renderStockFilters();
   renderStock();
   renderActionAvailability();

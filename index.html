@@ -72,6 +72,7 @@
         <div class="tab-group extension-tabs" aria-label="延伸模組">
           <button class="tab extension-tab" type="button" data-tab="transfers">E1 調撥</button>
           <button class="tab extension-tab" type="button" data-tab="finance">E2 財務</button>
+          <button class="tab extension-tab" type="button" data-tab="find">🔍 幫我找</button>
         </div>
       </nav>
 
@@ -679,6 +680,18 @@
         </section>
       </section>
 
+      <section class="view" data-view="find">
+        <div class="panel single-panel">
+          <div class="panel-head">
+            <h2>幫我找</h2>
+            <input id="find-query" type="search" placeholder="例：低庫存、沒收錢、賣不出去…">
+            <span id="find-result-count"></span>
+          </div>
+          <div id="find-chips" class="find-chips-container"></div>
+          <div id="find-results" class="record-list"></div>
+        </div>
+      </section>
+
       <section class="view" data-view="learning">
         <section class="learning-shell">
           <aside class="learning-sidebar panel" aria-label="同步教學章節">
@@ -740,7 +753,7 @@
         "app/appSeedData",
         "app/appFormatters", "app/appTextBaseline", "app/appDocumentUi",
         "app/appMaster", "app/appPurchases", "app/appSales", "app/appAdjustments", "app/appFinance", "app/appReports",
-        "app/appCompany",
+        "app/appCompany", "app/appFind",
         "app/app"
       ];
       function load(i) {

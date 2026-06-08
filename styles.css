@@ -998,3 +998,38 @@ td {
   text-align: center;
   padding: 12px;
 }
+
+/* ── 幫我找 ─────────────────────────────────────────────────────────────── */
+.find-chips-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.find-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.find-cat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted, #888);
+  min-width: 72px;
+  flex-shrink: 0;
+}
+.find-chip {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-card, #fff);
+  color: var(--text);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.find-chip:hover { border-color: var(--accent); color: var(--accent); }
+.find-chip.is-active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
