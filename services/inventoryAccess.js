@@ -52,7 +52,8 @@
     reports: ["owner", "purchasing", "sales", "warehouse", "finance", "auditor"],
     transfers: ["owner", "warehouse", "auditor"],
     finance: ["owner", "finance", "auditor"],
-    learning: ["owner", "purchasing", "sales", "warehouse", "finance", "auditor"]
+    learning: ["owner", "purchasing", "sales", "warehouse", "finance", "auditor"],
+    find: ["owner", "purchasing", "sales", "warehouse", "finance", "auditor"]
   };
 
   const fieldPermissions = {
